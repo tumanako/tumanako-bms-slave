@@ -65,6 +65,7 @@ void interruptHandler(void) __interrupt 0;
 void executeCommand(unsigned char rx);
 void halt();
 
+unsigned short getIShunt();
 unsigned short getVCell();
 unsigned short getVShunt();
 
@@ -364,7 +365,7 @@ void txVShunt() {
 #endif
 }
 
-unsigned short iShunt() {
+unsigned short getIShunt() {
 	unsigned short result = adc(BIN(11011101));
 #ifdef SHUNT_CIRCUIT_FIX
 	return 1225l * 10l * result * 10l / 49l / 1024l;
@@ -381,7 +382,7 @@ void txIShunt() {
 #ifdef SEND_BINARY
 	txBin10(adc(BIN(10011101)));
 #else
-	txShort(iShunt());
+	txShort(getIShunt());
 #endif
 }
 
@@ -542,7 +543,7 @@ unsigned short calculateTargetIShunt() {
 }
 
 void setIShunt(unsigned short targetShuntCurrent) {
-	unsigned short shuntCurrent = iShunt();
+	unsigned short shuntCurrent = getIShunt();
 	short difference;
 	// if we want zero current, park pots at ..._POT_OFF position
 	if (targetShuntCurrent == 0 && (gainPot != GAIN_POT_OFF || vShuntPot != V_SHUNT_POT_OFF)) {
@@ -601,7 +602,7 @@ void mapCurrentMatrix() {
 		setVShuntPot(vShunt);
 		for (gain = GAIN_POT_OFF; gain < 64; gain++) {
 			sleep(100);
-			current = iShunt();
+			current = getIShunt();
 			if (current > 0) {
 				txStatus();
 			}
