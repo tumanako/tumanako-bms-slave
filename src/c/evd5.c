@@ -102,6 +102,7 @@ unsigned char eventOverCurrent = 0;
 unsigned short minCurrent = 0;
 
 // current status
+unsigned short iShunt;
 unsigned short vCell;
 unsigned short vShunt;
 
@@ -195,6 +196,7 @@ void main(void) {
 		if (!isVddOn()) {
 			vddOn();
 		}
+		iShunt = getIShunt();
 		vCell = getVCell();
 		vShunt = getVShunt();
 		if (timerOverflow % 32 == 0) {
@@ -382,7 +384,7 @@ void txIShunt() {
 #ifdef SEND_BINARY
 	txBin10(adc(BIN(10011101)));
 #else
-	txShort(getIShunt());
+	txShort(iShunt);
 #endif
 }
 
@@ -543,7 +545,6 @@ unsigned short calculateTargetIShunt() {
 }
 
 void setIShunt(unsigned short targetShuntCurrent) {
-	unsigned short shuntCurrent = getIShunt();
 	short difference;
 	// if we want zero current, park pots at ..._POT_OFF position
 	if (targetShuntCurrent == 0 && (gainPot != GAIN_POT_OFF || vShuntPot != V_SHUNT_POT_OFF)) {
@@ -552,7 +553,7 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		return;
 	}
 	// first do current limit
-	if (shuntCurrent > ABS_MAX_SHUNT_CURRENT) {
+	if (iShunt > ABS_MAX_SHUNT_CURRENT) {
 		setGainPot(GAIN_POT_OFF);
 		setVShuntPot(GAIN_POT_OFF);
 		if (eventOverCurrent < 255) {
@@ -560,7 +561,7 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		}
 		return;
 	}
-	difference = shuntCurrent - targetShuntCurrent;
+	difference = iShunt - targetShuntCurrent;
 	if (abs(difference) < SHUNT_CURRENT_HYSTERISIS) {
 		return;
 	}
