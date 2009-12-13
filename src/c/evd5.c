@@ -65,19 +65,19 @@ void interruptHandler(void) __interrupt 0;
 void executeCommand(unsigned char rx);
 void halt();
 
-void temperature();
-void sendVCell();
-unsigned short vCell();
+unsigned short getVCell();
+unsigned short getIShunt();
 
-void txTargetIShunt();
+void txIShunt();
 void txStatus();
+void txTargetIShunt();
+void txTemperature();
+void txVCell();
+void txVShunt();
 
-void vShunt();
 void vddOn();
 void vddOff();
 unsigned char isVddOn();
-unsigned short iShunt();
-void sendIShunt();
 #ifdef MAP_CURRENT_MATRIX
 void mapCurrentMatrix();
 #endif
@@ -193,7 +193,7 @@ void main(void) {
 		if (timerOverflow % 32 == 0) {
 			// increment timerOverflow so we don't drop back in here on the next loop and go to sleep
 			timerOverflow++;
-			if (status.hasRx == 0 && vCell() < SHUNT_START_VOLTAGE) {
+			if (status.hasRx == 0 && getVCell() < SHUNT_START_VOLTAGE) {
 				halt();
 			}
 			status.hasRx = 0;
@@ -240,19 +240,19 @@ void main(void) {
 void executeCommand(unsigned char rx) {
 	switch (rx) {
 		case 'c' :
-			sendVCell();
+			txVCell();
 			crlf();
 			break;
 		case 's' :
-			vShunt();
+			txVShunt();
 			crlf();
 			break;
 		case 'i' :
-			sendIShunt();
+			txIShunt();
 			crlf();
 			break;
 		case 't' :
-			temperature();
+			txTemperature();
 			crlf();
 			break;
 		case 'p' :
@@ -322,26 +322,26 @@ void executeCommand(unsigned char rx) {
 	green(1);
 }
 
-void sendVCell() {
+void txVCell() {
 	tx('V');
 	tx('c');
 	tx('=');
 #ifdef SEND_BINARY
 	txBin10(~adc(BIN(10000101)));
 #else
-	txShort(vCell());
+	txShort(getVCell());
 #endif
 }
 
-unsigned short vCell() {
+unsigned short getVCell() {
 	unsigned short result;
 	result = adc(BIN(10000101));
 	return 1254400l / result;
 }
 
-void vShunt() {
+void txVShunt() {
 	unsigned short shunt = adc(BIN(10001101));
-	unsigned short vss = vCell();
+	unsigned short vss = getVCell();
 	tx('V');
 	tx('s');
 	tx('=');
@@ -362,7 +362,7 @@ unsigned short iShunt() {
 #endif
 }
 
-void sendIShunt() {
+void txIShunt() {
 	tx('I');
 	tx('s');
 	tx('=');
@@ -373,7 +373,7 @@ void sendIShunt() {
 #endif
 }
 
-void temperature() {
+void txTemperature() {
 	// we take the compliment because the original calculation requires it
 	// TODO work out new calculation that doesn't take the compliment
 	unsigned short result = ~adc(BIN(10010101)) & 0x03FF;
@@ -460,15 +460,15 @@ void txTargetIShunt() {
 }
 
 void txStatus() {
-	sendVCell();
+	txVCell();
 	tx(' ');
-	vShunt();
+	txVShunt();
 	tx(' ');
-	sendIShunt();
+	txIShunt();
 	tx(' ');
 	txTargetIShunt();
 	tx(' ');
-	temperature();
+	txTemperature();
 	tx(' ');
 	tx('V');
 	tx('g');
@@ -503,7 +503,7 @@ void halt() {
 
 
 unsigned short calculateTargetIShunt() {
-	unsigned short cellVoltage = vCell();
+	unsigned short cellVoltage = getVCell();
 	long difference;
 	short result;
 	if (cellVoltage < SHUNT_START_VOLTAGE) {
