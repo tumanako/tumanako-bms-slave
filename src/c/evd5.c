@@ -66,7 +66,7 @@ void executeCommand(unsigned char rx);
 void halt();
 
 unsigned short getVCell();
-unsigned short getIShunt();
+unsigned short getVShunt();
 
 void txIShunt();
 void txStatus();
@@ -102,6 +102,7 @@ unsigned short minCurrent = 0;
 
 // current status
 unsigned short vCell;
+unsigned short vShunt;
 
 volatile char rxBuf[RX_BUF_SIZE];
 volatile unsigned char rxStart = 0;
@@ -194,6 +195,7 @@ void main(void) {
 			vddOn();
 		}
 		vCell = getVCell();
+		vShunt = getVShunt();
 		if (timerOverflow % 32 == 0) {
 			// increment timerOverflow so we don't drop back in here on the next loop and go to sleep
 			timerOverflow++;
@@ -343,16 +345,22 @@ unsigned short getVCell() {
 	return 1254400l / result;
 }
 
-void txVShunt() {
+unsigned short getVShunt() {
 	unsigned short shunt = adc(BIN(10001101));
-	unsigned short vss = vCell;
+	return (unsigned long) vCell * shunt / 1024;
+}
+
+void txVShunt() {
 	tx('V');
 	tx('s');
 	tx('=');
 #ifdef SEND_BINARY
-	txBin10(~shunt & 0x03FF);
+	{
+		unsigned short shunt = adc(BIN(10001101));
+		txBin10(~shunt & 0x03FF);
+	}
 #else
-	txShort((unsigned long) vss * shunt / 1024);
+	txShort(vShunt);
 #endif
 }
 
