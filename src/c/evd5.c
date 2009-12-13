@@ -66,6 +66,7 @@ void executeCommand(unsigned char rx);
 void halt();
 
 unsigned short getIShunt();
+unsigned short getTemperature();
 unsigned short getVCell();
 unsigned short getVShunt();
 
@@ -105,6 +106,7 @@ unsigned short minCurrent = 0;
 unsigned short iShunt;
 unsigned short vCell;
 unsigned short vShunt;
+unsigned short temperature;
 
 volatile char rxBuf[RX_BUF_SIZE];
 volatile unsigned char rxStart = 0;
@@ -197,6 +199,7 @@ void main(void) {
 			vddOn();
 		}
 		iShunt = getIShunt();
+		temperature = getTemperature();
 		vCell = getVCell();
 		vShunt = getVShunt();
 		if (timerOverflow % 32 == 0) {
@@ -342,6 +345,11 @@ void txVCell() {
 #endif
 }
 
+unsigned short getTemperature() {
+	unsigned short result = ~adc(BIN(10010101)) & 0x03FF;
+	return (10700000 - 11145l * result) / 1000;
+}
+
 unsigned short getVCell() {
 	unsigned short result;
 	result = adc(BIN(10000101));
@@ -391,14 +399,13 @@ void txIShunt() {
 void txTemperature() {
 	// we take the compliment because the original calculation requires it
 	// TODO work out new calculation that doesn't take the compliment
-	unsigned short result = ~adc(BIN(10010101)) & 0x03FF;
 	tx('V');
 	tx('t');
 	tx('=');
 #ifdef SEND_BINARY
-	txBin10(result);
+	txBin10(~adc(BIN(10010101)) & 0x03FF);
 #else
-	txShort((10700000 - 11145l * result) / 1000);
+	txShort(temperature);
 #endif
 }
 
