@@ -100,6 +100,9 @@ char vShuntPot = MAX_POT;
 unsigned char eventOverCurrent = 0;
 unsigned short minCurrent = 0;
 
+// current status
+unsigned short vCell;
+
 volatile char rxBuf[RX_BUF_SIZE];
 volatile unsigned char rxStart = 0;
 volatile unsigned char rxEnd = 0;
@@ -190,10 +193,11 @@ void main(void) {
 		if (!isVddOn()) {
 			vddOn();
 		}
+		vCell = getVCell();
 		if (timerOverflow % 32 == 0) {
 			// increment timerOverflow so we don't drop back in here on the next loop and go to sleep
 			timerOverflow++;
-			if (status.hasRx == 0 && getVCell() < SHUNT_START_VOLTAGE) {
+			if (status.hasRx == 0 && vCell < SHUNT_START_VOLTAGE) {
 				halt();
 			}
 			status.hasRx = 0;
@@ -329,7 +333,7 @@ void txVCell() {
 #ifdef SEND_BINARY
 	txBin10(~adc(BIN(10000101)));
 #else
-	txShort(getVCell());
+	txShort(vCell);
 #endif
 }
 
@@ -341,7 +345,7 @@ unsigned short getVCell() {
 
 void txVShunt() {
 	unsigned short shunt = adc(BIN(10001101));
-	unsigned short vss = getVCell();
+	unsigned short vss = vCell;
 	tx('V');
 	tx('s');
 	tx('=');
@@ -503,7 +507,7 @@ void halt() {
 
 
 unsigned short calculateTargetIShunt() {
-	unsigned short cellVoltage = getVCell();
+	unsigned short cellVoltage = vCell;
 	long difference;
 	short result;
 	if (cellVoltage < SHUNT_START_VOLTAGE) {
