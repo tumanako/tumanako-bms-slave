@@ -23,6 +23,10 @@ struct evd5_status_t {
 	unsigned short vCell;
 	unsigned short vShunt;
 	unsigned short temperature;
+	// lower numbers == less gain
+	char gainPot;
+	// lower numbers == less voltage
+	char vShuntPot;
 	// true if we have received a character since the last time loopCounter overflowed
 	unsigned char hasRx:1;
 	// true if we are doing software addressing
@@ -31,4 +35,4 @@ struct evd5_status_t {
 	unsigned char automatic:1;
 };
 
-#define EVD5_STATUS_LENGTH 9
+#define EVD5_STATUS_LENGTH 11

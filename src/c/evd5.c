@@ -94,11 +94,6 @@ void setGainPot(unsigned char c);
 void writeCellID(unsigned short serial);
 void initCellMagic();
 
-// lower numbers == less gain
-char gainPot = MAX_POT;
-// lower numbers == less voltage
-char vShuntPot = MAX_POT;
-
 // the number of times we have seen overcurrent on the shunt
 // TODO provide interface to get and clear this
 unsigned char eventOverCurrent = 0;
@@ -176,6 +171,8 @@ void main(void) {
 	status.hasRx = 0;
 	status.softwareAddressing = 1;
 	status.automatic = 1;
+	status.gainPot = MAX_POT;
+	status.vShuntPot = MAX_POT;
 
 	red(150);
 	green(150);
@@ -246,16 +243,16 @@ void executeCommand(unsigned char rx) {
 			vddOff();
 			break;
 		case 'u' :
-			setVShuntPot(vShuntPot + 1);
+			setVShuntPot(status.vShuntPot + 1);
 			break;
 		case 'd' :
-			setVShuntPot(vShuntPot - 1);
+			setVShuntPot(status.vShuntPot - 1);
 			break;
 		case '1' :
-			setGainPot(gainPot - 1);
+			setGainPot(status.gainPot - 1);
 			break;
 		case '2' :
-			setGainPot(gainPot + 1);
+			setGainPot(status.gainPot + 1);
 			break;
 		case 'g' :
 			green(200);
@@ -417,7 +414,7 @@ void setVShuntPot(unsigned char c) {
 		RA5 = 0;		// back to low
 	}
 	RA2 = 1;			// release chip select CS0 (set high)
-	vShuntPot = c;
+	status.vShuntPot = c;
 }
 
 void setGainPot(unsigned char c) {
@@ -442,7 +439,7 @@ void setGainPot(unsigned char c) {
 		RA5 = 0;		// back to low
 	}
 	RA0 = 1;			// release chip select CS0 (set high)
-	gainPot = c;
+	status.gainPot = c;
 }
 
 void txTargetIShunt() {
@@ -474,11 +471,11 @@ void txStatus() {
 	tx('V');
 	tx('g');
 	tx('=');
-	txByte(vShuntPot);
+	txByte(status.vShuntPot);
 	tx(' ');
 	tx('g');
 	tx('=');
-	txByte(gainPot);
+	txByte(status.gainPot);
 	tx(' ');
 	tx('m');
 	tx('=');
@@ -533,7 +530,7 @@ unsigned short calculateTargetIShunt() {
 void setIShunt(unsigned short targetShuntCurrent) {
 	short difference;
 	// if we want zero current, park pots at ..._POT_OFF position
-	if (targetShuntCurrent == 0 && (gainPot != GAIN_POT_OFF || vShuntPot != V_SHUNT_POT_OFF)) {
+	if (targetShuntCurrent == 0 && (status.gainPot != GAIN_POT_OFF || status.vShuntPot != V_SHUNT_POT_OFF)) {
 		setGainPot(GAIN_POT_OFF);
 		setVShuntPot(V_SHUNT_POT_OFF);
 		return;
@@ -552,15 +549,15 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		return;
 	}
 	if (difference < 0) {
-		if (vShuntPot >= MAX_POT) {
-			setVShuntPot(vShuntPot - 10);
-			setGainPot(gainPot + 1);
+		if (status.vShuntPot >= MAX_POT) {
+			setVShuntPot(status.vShuntPot - 10);
+			setGainPot(status.gainPot + 1);
 		}
-		setVShuntPot(vShuntPot + 1);
+		setVShuntPot(status.vShuntPot + 1);
 		red(2);
 	} else {
 		// TODO reduce gain
-		setVShuntPot(vShuntPot - 1);
+		setVShuntPot(status.vShuntPot - 1);
 		green(2);
 	}
 }
