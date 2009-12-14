@@ -70,6 +70,7 @@ unsigned short getTemperature();
 unsigned short getVCell();
 unsigned short getVShunt();
 
+void txBinStatus();
 void txIShunt();
 void txStatus();
 void txTargetIShunt();
@@ -249,22 +250,6 @@ void main(void) {
 
 void executeCommand(unsigned char rx) {
 	switch (rx) {
-		case 'c' :
-			txVCell();
-			crlf();
-			break;
-		case 's' :
-			txVShunt();
-			crlf();
-			break;
-		case 'i' :
-			txIShunt();
-			crlf();
-			break;
-		case 't' :
-			txTemperature();
-			crlf();
-			break;
 		case 'p' :
 			vddOn();
 			break;
@@ -289,10 +274,6 @@ void executeCommand(unsigned char rx) {
 		case 'r' :
 			red(200);
 			break;
-		case 'q' :
-			txTargetIShunt();
-			crlf();
-			break;
 #ifdef MAP_CURRENT_MATRIX
 		case 'm' :
 			mapCurrentMatrix();
@@ -300,6 +281,9 @@ void executeCommand(unsigned char rx) {
 #endif
 		case '?' :
 			txStatus();
+			break;
+		case '/' :
+			txBinStatus();
 			break;
 		case 'x' :
 			halt();
@@ -472,11 +456,19 @@ void setGainPot(unsigned char c) {
 	gainPot = c;
 }
 
-
 void txTargetIShunt() {
 	tx('Q');
 	tx('=');
 	txShort(calculateTargetIShunt());
+}
+
+void txBinStatus() {
+	unsigned char *buf = (unsigned char *) &status;
+	int i;
+	for (i = 0; i < sizeof(struct status_t); i++) {
+		tx(*buf);
+		buf++;
+	}
 }
 
 void txStatus() {
