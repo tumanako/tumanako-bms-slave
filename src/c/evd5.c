@@ -22,6 +22,7 @@
 #define __16f688
 #include "pic/pic16f688.h"
 #include "util.h"
+#include "evd5.h"
 
 //#define SEND_BINARY
 #define SHUNT_CIRCUIT_FIX
@@ -110,19 +111,7 @@ volatile unsigned char rxEnd = 0;
 // incremented each time the timer overflows (skips multiples of 32)
 volatile unsigned char timerOverflow = 1;
 
-struct status_t {
-	unsigned short iShunt;
-	unsigned short vCell;
-	unsigned short vShunt;
-	unsigned short temperature;
-	// true if we have received a character since the last time loopCounter overflowed
-	unsigned char hasRx:1;
-	// true if we are doing software addressing
-	unsigned char softwareAddressing:1;
-	// true if we are controlling the shunt current automatically
-	unsigned char automatic:1;
-};
-struct status_t status;
+struct evd5_status_t status;
 
 // magic string at start of packet (includes cell ID)
 char cellMagic[6];
@@ -465,7 +454,7 @@ void txTargetIShunt() {
 void txBinStatus() {
 	unsigned char *buf = (unsigned char *) &status;
 	int i;
-	for (i = 0; i < sizeof(struct status_t); i++) {
+	for (i = 0; i < sizeof(struct evd5_status_t); i++) {
 		tx(*buf);
 		buf++;
 	}
