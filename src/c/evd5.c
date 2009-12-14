@@ -102,12 +102,6 @@ char vShuntPot = MAX_POT;
 unsigned char eventOverCurrent = 0;
 unsigned short minCurrent = 0;
 
-// current status
-unsigned short iShunt;
-unsigned short vCell;
-unsigned short vShunt;
-unsigned short temperature;
-
 volatile char rxBuf[RX_BUF_SIZE];
 volatile unsigned char rxStart = 0;
 volatile unsigned char rxEnd = 0;
@@ -116,6 +110,10 @@ volatile unsigned char rxEnd = 0;
 volatile unsigned char timerOverflow = 1;
 
 struct status_t {
+	unsigned short iShunt;
+	unsigned short vCell;
+	unsigned short vShunt;
+	unsigned short temperature;
 	// true if we have received a character since the last time loopCounter overflowed
 	unsigned char hasRx:1;
 	// true if we are doing software addressing
@@ -198,14 +196,14 @@ void main(void) {
 		if (!isVddOn()) {
 			vddOn();
 		}
-		iShunt = getIShunt();
-		temperature = getTemperature();
-		vCell = getVCell();
-		vShunt = getVShunt();
+		status.iShunt = getIShunt();
+		status.temperature = getTemperature();
+		status.vCell = getVCell();
+		status.vShunt = getVShunt();
 		if (timerOverflow % 32 == 0) {
 			// increment timerOverflow so we don't drop back in here on the next loop and go to sleep
 			timerOverflow++;
-			if (status.hasRx == 0 && vCell < SHUNT_START_VOLTAGE) {
+			if (status.hasRx == 0 && status.vCell < SHUNT_START_VOLTAGE) {
 				halt();
 			}
 			status.hasRx = 0;
@@ -341,7 +339,7 @@ void txVCell() {
 #ifdef SEND_BINARY
 	txBin10(~adc(BIN(10000101)));
 #else
-	txShort(vCell);
+	txShort(status.vCell);
 #endif
 }
 
@@ -358,7 +356,7 @@ unsigned short getVCell() {
 
 unsigned short getVShunt() {
 	unsigned short shunt = adc(BIN(10001101));
-	return (unsigned long) vCell * shunt / 1024;
+	return (unsigned long) status.vCell * shunt / 1024;
 }
 
 void txVShunt() {
@@ -371,7 +369,7 @@ void txVShunt() {
 		txBin10(~shunt & 0x03FF);
 	}
 #else
-	txShort(vShunt);
+	txShort(status.vShunt);
 #endif
 }
 
@@ -392,7 +390,7 @@ void txIShunt() {
 #ifdef SEND_BINARY
 	txBin10(adc(BIN(10011101)));
 #else
-	txShort(iShunt);
+	txShort(status.iShunt);
 #endif
 }
 
@@ -405,7 +403,7 @@ void txTemperature() {
 #ifdef SEND_BINARY
 	txBin10(~adc(BIN(10010101)) & 0x03FF);
 #else
-	txShort(temperature);
+	txShort(status.temperature);
 #endif
 }
 
@@ -525,7 +523,7 @@ void halt() {
 
 
 unsigned short calculateTargetIShunt() {
-	unsigned short cellVoltage = vCell;
+	unsigned short cellVoltage = status.vCell;
 	long difference;
 	short result;
 	if (cellVoltage < SHUNT_START_VOLTAGE) {
@@ -560,7 +558,7 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		return;
 	}
 	// first do current limit
-	if (iShunt > ABS_MAX_SHUNT_CURRENT) {
+	if (status.iShunt > ABS_MAX_SHUNT_CURRENT) {
 		setGainPot(GAIN_POT_OFF);
 		setVShuntPot(GAIN_POT_OFF);
 		if (eventOverCurrent < 255) {
@@ -568,7 +566,7 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		}
 		return;
 	}
-	difference = iShunt - targetShuntCurrent;
+	difference = status.iShunt - targetShuntCurrent;
 	if (abs(difference) < SHUNT_CURRENT_HYSTERISIS) {
 		return;
 	}
