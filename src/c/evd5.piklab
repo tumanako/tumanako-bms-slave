@@ -7,6 +7,7 @@
       <item>evd5.c</item>
       <item>util.c</item>
       <item>util.h</item>
+      <item>evd5.h</item>
     </files>
     <description/>
     <version>0.1</version>
