@@ -97,7 +97,6 @@ void initCellMagic();
 // the number of times we have seen overcurrent on the shunt
 // TODO provide interface to get and clear this
 unsigned char eventOverCurrent = 0;
-unsigned short minCurrent = 0;
 
 volatile char rxBuf[RX_BUF_SIZE];
 volatile unsigned char rxStart = 0;
@@ -110,13 +109,14 @@ unsigned short at 0x140 iShunt;
 unsigned short at 0x142 vCell;
 unsigned short at 0x144 vShunt;
 unsigned short at 0x146 temperature;
+unsigned short at 0x148 minCurrent = 0;
 // lower numbers == less gain
-char at 0x148 gainPot = MAX_POT;
+char at 0x14A gainPot = MAX_POT;
 // lower numbers == less voltage
-char at 0x149 vShuntPot = MAX_POT;
-unsigned char at 0x14A hasRx = 0;
-unsigned char at 0x14B softwareAddressing = 1;
-unsigned char at 0x14C automatic = 1;
+char at 0x14B vShuntPot = MAX_POT;
+unsigned char at 0x14C hasRx = 0;
+unsigned char at 0x14D softwareAddressing = 1;
+unsigned char at 0x14E automatic = 1;
 
 // magic string at start of packet (includes cell ID)
 char cellMagic[6];
