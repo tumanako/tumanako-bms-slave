@@ -106,7 +106,17 @@ volatile unsigned char rxEnd = 0;
 // incremented each time the timer overflows (skips multiples of 32)
 volatile unsigned char timerOverflow = 1;
 
-struct evd5_status_t status;
+unsigned short at 0x140 iShunt;
+unsigned short at 0x142 vCell;
+unsigned short at 0x144 vShunt;
+unsigned short at 0x146 temperature;
+// lower numbers == less gain
+char at 0x148 gainPot = MAX_POT;
+// lower numbers == less voltage
+char at 0x149 vShuntPot = MAX_POT;
+unsigned char at 0x14A hasRx = 0;
+unsigned char at 0x14B softwareAddressing = 1;
+unsigned char at 0x14C automatic = 1;
 
 // magic string at start of packet (includes cell ID)
 char cellMagic[6];
@@ -168,12 +178,6 @@ void main(void) {
 	//writeCellID(0x3033);
 	initCellMagic();
 
-	status.hasRx = 0;
-	status.softwareAddressing = 1;
-	status.automatic = 1;
-	status.gainPot = MAX_POT;
-	status.vShuntPot = MAX_POT;
-
 	red(150);
 	green(150);
 	red(150);
@@ -183,17 +187,17 @@ void main(void) {
 		if (!isVddOn()) {
 			vddOn();
 		}
-		status.iShunt = getIShunt();
-		status.temperature = getTemperature();
-		status.vCell = getVCell();
-		status.vShunt = getVShunt();
+		iShunt = getIShunt();
+		temperature = getTemperature();
+		vCell = getVCell();
+		vShunt = getVShunt();
 		if (timerOverflow % 32 == 0) {
 			// increment timerOverflow so we don't drop back in here on the next loop and go to sleep
 			timerOverflow++;
-			if (status.hasRx == 0 && status.vCell < SHUNT_START_VOLTAGE) {
+			if (hasRx == 0 && vCell < SHUNT_START_VOLTAGE) {
 				halt();
 			}
-			status.hasRx = 0;
+			hasRx = 0;
 			red(10);
 		}
 		if (OERR) {
@@ -203,9 +207,9 @@ void main(void) {
 		}
 		while (rxStart != rxEnd) {
 			char rx = rxBuf[rxStart % RX_BUF_SIZE];
-			status.hasRx = 1;
+			hasRx = 1;
 			rxStart++;
-			if (status.softwareAddressing) {
+			if (softwareAddressing) {
 				switch (state) {
 					case STATE_WANT_SEQUENCE_NUMBER :
 						state = STATE_WANT_COMMAND;
@@ -228,7 +232,7 @@ void main(void) {
 				executeCommand(rx);
 			}
 		}
-		if (status.automatic) {
+		if (automatic) {
 			setIShunt(calculateTargetIShunt());
 		}
 	}
@@ -243,16 +247,16 @@ void executeCommand(unsigned char rx) {
 			vddOff();
 			break;
 		case 'u' :
-			setVShuntPot(status.vShuntPot + 1);
+			setVShuntPot(vShuntPot + 1);
 			break;
 		case 'd' :
-			setVShuntPot(status.vShuntPot - 1);
+			setVShuntPot(vShuntPot - 1);
 			break;
 		case '1' :
-			setGainPot(status.gainPot - 1);
+			setGainPot(gainPot - 1);
 			break;
 		case '2' :
-			setGainPot(status.gainPot + 1);
+			setGainPot(gainPot + 1);
 			break;
 		case 'g' :
 			green(200);
@@ -289,13 +293,13 @@ void executeCommand(unsigned char rx) {
 			crlf();
 			break;
 		case '#' :
-			status.softwareAddressing = 1 - status.softwareAddressing;
-			txByte(status.softwareAddressing);
+			softwareAddressing = 1 - softwareAddressing;
+			txByte(softwareAddressing);
 			crlf();
 			break;
 		case '$' :
-			status.automatic = 1 - status.automatic;
-			txByte(status.automatic);
+			automatic = 1 - automatic;
+			txByte(automatic);
 			crlf();
 			break;
 	}
@@ -309,7 +313,7 @@ void txVCell() {
 #ifdef SEND_BINARY
 	txBin10(~adc(BIN(10000101)));
 #else
-	txShort(status.vCell);
+	txShort(vCell);
 #endif
 }
 
@@ -326,7 +330,7 @@ unsigned short getVCell() {
 
 unsigned short getVShunt() {
 	unsigned short shunt = adc(BIN(10001101));
-	return (unsigned long) status.vCell * shunt / 1024;
+	return (unsigned long) vCell * shunt / 1024;
 }
 
 void txVShunt() {
@@ -339,7 +343,7 @@ void txVShunt() {
 		txBin10(~shunt & 0x03FF);
 	}
 #else
-	txShort(status.vShunt);
+	txShort(vShunt);
 #endif
 }
 
@@ -360,7 +364,7 @@ void txIShunt() {
 #ifdef SEND_BINARY
 	txBin10(adc(BIN(10011101)));
 #else
-	txShort(status.iShunt);
+	txShort(iShunt);
 #endif
 }
 
@@ -373,7 +377,7 @@ void txTemperature() {
 #ifdef SEND_BINARY
 	txBin10(~adc(BIN(10010101)) & 0x03FF);
 #else
-	txShort(status.temperature);
+	txShort(temperature);
 #endif
 }
 
@@ -414,7 +418,7 @@ void setVShuntPot(unsigned char c) {
 		RA5 = 0;		// back to low
 	}
 	RA2 = 1;			// release chip select CS0 (set high)
-	status.vShuntPot = c;
+	vShuntPot = c;
 }
 
 void setGainPot(unsigned char c) {
@@ -439,7 +443,7 @@ void setGainPot(unsigned char c) {
 		RA5 = 0;		// back to low
 	}
 	RA0 = 1;			// release chip select CS0 (set high)
-	status.gainPot = c;
+	gainPot = c;
 }
 
 void txTargetIShunt() {
@@ -449,9 +453,9 @@ void txTargetIShunt() {
 }
 
 void txBinStatus() {
-	unsigned char *buf = (unsigned char *) &status;
+	unsigned char *buf = (unsigned char *) &iShunt;
 	int i;
-	for (i = 0; i < sizeof(struct evd5_status_t); i++) {
+	for (i = 0; i < EVD5_STATUS_LENGTH; i++) {
 		tx(*buf);
 		buf++;
 	}
@@ -471,11 +475,11 @@ void txStatus() {
 	tx('V');
 	tx('g');
 	tx('=');
-	txByte(status.vShuntPot);
+	txByte(vShuntPot);
 	tx(' ');
 	tx('g');
 	tx('=');
-	txByte(status.gainPot);
+	txByte(gainPot);
 	tx(' ');
 	tx('m');
 	tx('=');
@@ -501,7 +505,7 @@ void halt() {
 
 
 unsigned short calculateTargetIShunt() {
-	unsigned short cellVoltage = status.vCell;
+	unsigned short cellVoltage = vCell;
 	long difference;
 	short result;
 	if (cellVoltage < SHUNT_START_VOLTAGE) {
@@ -530,13 +534,13 @@ unsigned short calculateTargetIShunt() {
 void setIShunt(unsigned short targetShuntCurrent) {
 	short difference;
 	// if we want zero current, park pots at ..._POT_OFF position
-	if (targetShuntCurrent == 0 && (status.gainPot != GAIN_POT_OFF || status.vShuntPot != V_SHUNT_POT_OFF)) {
+	if (targetShuntCurrent == 0 && (gainPot != GAIN_POT_OFF || vShuntPot != V_SHUNT_POT_OFF)) {
 		setGainPot(GAIN_POT_OFF);
 		setVShuntPot(V_SHUNT_POT_OFF);
 		return;
 	}
 	// first do current limit
-	if (status.iShunt > ABS_MAX_SHUNT_CURRENT) {
+	if (iShunt > ABS_MAX_SHUNT_CURRENT) {
 		setGainPot(GAIN_POT_OFF);
 		setVShuntPot(GAIN_POT_OFF);
 		if (eventOverCurrent < 255) {
@@ -544,20 +548,20 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		}
 		return;
 	}
-	difference = status.iShunt - targetShuntCurrent;
+	difference = iShunt - targetShuntCurrent;
 	if (abs(difference) < SHUNT_CURRENT_HYSTERISIS) {
 		return;
 	}
 	if (difference < 0) {
-		if (status.vShuntPot >= MAX_POT) {
-			setVShuntPot(status.vShuntPot - 10);
-			setGainPot(status.gainPot + 1);
+		if (vShuntPot >= MAX_POT) {
+			setVShuntPot(vShuntPot - 10);
+			setGainPot(gainPot + 1);
 		}
-		setVShuntPot(status.vShuntPot + 1);
+		setVShuntPot(vShuntPot + 1);
 		red(2);
 	} else {
 		// TODO reduce gain
-		setVShuntPot(status.vShuntPot - 1);
+		setVShuntPot(vShuntPot - 1);
 		green(2);
 	}
 }

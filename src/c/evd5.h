@@ -28,11 +28,11 @@ struct evd5_status_t {
 	// lower numbers == less voltage
 	char vShuntPot;
 	// true if we have received a character since the last time loopCounter overflowed
-	unsigned char hasRx:1;
+	unsigned char hasRx;
 	// true if we are doing software addressing
-	unsigned char softwareAddressing:1;
+	unsigned char softwareAddressing;
 	// true if we are controlling the shunt current automatically
-	unsigned char automatic:1;
+	unsigned char automatic;
 };
 
-#define EVD5_STATUS_LENGTH 11
+#define EVD5_STATUS_LENGTH 13
