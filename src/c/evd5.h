@@ -25,6 +25,7 @@ struct evd5_status_t {
 	unsigned short vShunt;
 	unsigned short temperature;
 	unsigned short minCurrent;
+	unsigned char sequenceNumber;
 	// lower numbers == less gain
 	char gainPot;
 	// lower numbers == less voltage
@@ -37,4 +38,4 @@ struct evd5_status_t {
 	unsigned char automatic;
 };
 
-#define EVD5_STATUS_LENGTH 17
+#define EVD5_STATUS_LENGTH 18

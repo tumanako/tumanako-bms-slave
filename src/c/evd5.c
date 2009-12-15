@@ -112,7 +112,8 @@ volatile unsigned char timerOverflow = 1;
 #define V_SHUNT_ADDR			V_CELL_ADDR + 2
 #define TEMPERATURE_ADDR		V_SHUNT_ADDR + 2
 #define MIN_CURRENT_ADDR		TEMPERATURE_ADDR + 2
-#define GAIN_POT_ADDR			MIN_CURRENT_ADDR + 2
+#define SEQUENCE_NUMBER_ADDR		MIN_CURRENT_ADDR + 2
+#define GAIN_POT_ADDR			SEQUENCE_NUMBER_ADDR + 1
 #define V_SHUNT_POT_ADDR		GAIN_POT_ADDR + 1
 #define HAS_RX_ADDR			V_SHUNT_POT_ADDR + 1
 #define SOFTWARE_ADDRESSING_ADDR	HAS_RX_ADDR + 1
@@ -125,6 +126,7 @@ unsigned short at V_CELL_ADDR vCell;
 unsigned short at V_SHUNT_ADDR vShunt;
 unsigned short at TEMPERATURE_ADDR temperature;
 unsigned short at MIN_CURRENT_ADDR minCurrent = 0;
+unsigned char at SEQUENCE_NUMBER_ADDR sequenceNumber;
 // lower numbers == less gain
 char at GAIN_POT_ADDR gainPot = MAX_POT;
 // lower numbers == less voltage
@@ -135,7 +137,6 @@ unsigned char at AUTOMATIC_ADDR automatic = 1;
 
 
 unsigned char state = STATE_WANT_MAGIC_1;
-unsigned char sequenceNumber;
 
 void interruptHandler(void) __interrupt 0 {
 	if (RCIF) {
