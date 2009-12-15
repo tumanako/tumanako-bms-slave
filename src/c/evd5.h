@@ -19,6 +19,7 @@
 */
 
 struct evd5_status_t {
+	unsigned short cellAddress;
 	unsigned short iShunt;
 	unsigned short vCell;
 	unsigned short vShunt;
@@ -36,4 +37,4 @@ struct evd5_status_t {
 	unsigned char automatic;
 };
 
-#define EVD5_STATUS_LENGTH 15
+#define EVD5_STATUS_LENGTH 17

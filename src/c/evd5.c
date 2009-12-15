@@ -105,21 +105,35 @@ volatile unsigned char rxEnd = 0;
 // incremented each time the timer overflows (skips multiples of 32)
 volatile unsigned char timerOverflow = 1;
 
-unsigned short at 0x140 iShunt;
-unsigned short at 0x142 vCell;
-unsigned short at 0x144 vShunt;
-unsigned short at 0x146 temperature;
-unsigned short at 0x148 minCurrent = 0;
-// lower numbers == less gain
-char at 0x14A gainPot = MAX_POT;
-// lower numbers == less voltage
-char at 0x14B vShuntPot = MAX_POT;
-unsigned char at 0x14C hasRx = 0;
-unsigned char at 0x14D softwareAddressing = 1;
-unsigned char at 0x14E automatic = 1;
+#define CELL_MAGIC_ADDR			0x140
+#define STATUS_START_ADDR		CELL_MAGIC_ADDR + 4
+#define I_SHUNT_ADDR			CELL_MAGIC_ADDR + 6
+#define V_CELL_ADDR			I_SHUNT_ADDR + 2
+#define V_SHUNT_ADDR			V_CELL_ADDR + 2
+#define TEMPERATURE_ADDR		V_SHUNT_ADDR + 2
+#define MIN_CURRENT_ADDR		TEMPERATURE_ADDR + 2
+#define GAIN_POT_ADDR			MIN_CURRENT_ADDR + 2
+#define V_SHUNT_POT_ADDR		GAIN_POT_ADDR + 1
+#define HAS_RX_ADDR			V_SHUNT_POT_ADDR + 1
+#define SOFTWARE_ADDRESSING_ADDR	HAS_RX_ADDR + 1
+#define AUTOMATIC_ADDR			SOFTWARE_ADDRESSING_ADDR + 1
 
 // magic string at start of packet (includes cell ID)
-char cellMagic[6];
+char at CELL_MAGIC_ADDR cellMagic[6];
+unsigned short at I_SHUNT_ADDR iShunt;
+unsigned short at V_CELL_ADDR vCell;
+unsigned short at V_SHUNT_ADDR vShunt;
+unsigned short at TEMPERATURE_ADDR temperature;
+unsigned short at MIN_CURRENT_ADDR minCurrent = 0;
+// lower numbers == less gain
+char at GAIN_POT_ADDR gainPot = MAX_POT;
+// lower numbers == less voltage
+char at V_SHUNT_POT_ADDR vShuntPot = MAX_POT;
+unsigned char at HAS_RX_ADDR hasRx = 0;
+unsigned char at SOFTWARE_ADDRESSING_ADDR softwareAddressing = 1;
+unsigned char at AUTOMATIC_ADDR automatic = 1;
+
+
 unsigned char state = STATE_WANT_MAGIC_1;
 unsigned char sequenceNumber;
 
@@ -455,6 +469,7 @@ void txTargetIShunt() {
 void txBinStatus() {
 	unsigned char *buf = (unsigned char *) &iShunt;
 	int i;
+	buf -= 2;
 	for (i = 0; i < EVD5_STATUS_LENGTH; i++) {
 		tx(*buf);
 		buf++;
