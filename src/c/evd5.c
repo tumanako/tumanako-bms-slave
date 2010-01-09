@@ -38,13 +38,13 @@
 #define V_SHUNT_POT_OFF 20
 #define MAX_POT 63
 
-#define RX_BUF_SIZE 8
+#define RX_BUF_SIZE 16
 #define EEPROM_CELL_ID_LOW 0x0F
 #define EEPROM_CELL_ID_HIGH 0x10
 
 // packet
 // 4 character start-of-packet string "helo"
-// 3 character cell id
+// 2 character cell id
 // 1 character sequence number
 // 1 character command
 // TODO replace with enum?
