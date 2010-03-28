@@ -121,22 +121,21 @@ volatile unsigned char timerOverflow = 1;
 
 // magic string at start of packet (includes cell ID)
 char at CELL_MAGIC_ADDR cellMagic[6];
-unsigned short at I_SHUNT_ADDR iShunt;
-unsigned short at V_CELL_ADDR vCell;
-unsigned short at V_SHUNT_ADDR vShunt;
-unsigned short at TEMPERATURE_ADDR temperature;
-unsigned short at MIN_CURRENT_ADDR minCurrent = 0;
-unsigned char at SEQUENCE_NUMBER_ADDR sequenceNumber;
+volatile unsigned short at I_SHUNT_ADDR iShunt;
+volatile unsigned short at V_CELL_ADDR vCell;
+volatile unsigned short at V_SHUNT_ADDR vShunt;
+volatile unsigned short at TEMPERATURE_ADDR temperature;
+volatile unsigned short at MIN_CURRENT_ADDR minCurrent = 0;
+volatile unsigned char at SEQUENCE_NUMBER_ADDR sequenceNumber;
 // lower numbers == less gain
-char at GAIN_POT_ADDR gainPot = MAX_POT;
+volatile char at GAIN_POT_ADDR gainPot = MAX_POT;
 // lower numbers == less voltage
-char at V_SHUNT_POT_ADDR vShuntPot = MAX_POT;
-unsigned char at HAS_RX_ADDR hasRx = 0;
-unsigned char at SOFTWARE_ADDRESSING_ADDR softwareAddressing = 1;
-unsigned char at AUTOMATIC_ADDR automatic = 1;
+volatile char at V_SHUNT_POT_ADDR vShuntPot = MAX_POT;
+volatile unsigned char at HAS_RX_ADDR hasRx = 0;
+volatile unsigned char at SOFTWARE_ADDRESSING_ADDR softwareAddressing = 1;
+volatile unsigned char at AUTOMATIC_ADDR automatic = 1;
 
-
-unsigned char state = STATE_WANT_MAGIC_1;
+volatile unsigned char state = STATE_WANT_MAGIC_1;
 
 void interruptHandler(void) __interrupt 0 {
 	if (RCIF) {
@@ -146,6 +145,33 @@ void interruptHandler(void) __interrupt 0 {
 	if (TMR1IF) {
 		timerOverflow++;
 		TMR1IF = 0;
+	}
+	while (rxStart != rxEnd) {
+		char rx = rxBuf[rxStart % RX_BUF_SIZE];
+		hasRx = 1;
+		rxStart++;
+		if (softwareAddressing) {
+			switch (state) {
+				case STATE_WANT_SEQUENCE_NUMBER :
+					state = STATE_WANT_COMMAND;
+					sequenceNumber = rx;
+					break;
+				case STATE_WANT_COMMAND :
+					state = STATE_WANT_MAGIC_1;
+					executeCommand(rx);
+					break;
+				default :
+					if (rx == cellMagic[state]) {
+						state++;
+					} else {
+						state = STATE_WANT_MAGIC_1;
+					}
+			}
+			//txByte(state);
+			//crlf();
+		} else {
+			executeCommand(rx);
+		}
 	}
 }
 
@@ -202,10 +228,25 @@ void main(void) {
 		if (!isVddOn()) {
 			vddOn();
 		}
-		iShunt = getIShunt();
-		temperature = getTemperature();
-		vCell = getVCell();
-		vShunt = getVShunt();
+		if (minCurrent) {
+			red(10);
+		} else {
+			green(10);
+		}
+		{
+			unsigned short localIShunt = getIShunt();
+			unsigned short localTemperature = getTemperature();
+			unsigned short localVCell = getVCell();
+			unsigned short localVShunt = getVShunt();
+			// turn off receive interrupt
+			RCIE = 0;
+			iShunt = localIShunt;
+			temperature = localTemperature;
+			vCell = localVCell;
+			vShunt = localVShunt;
+			RCIE = 1;
+			// turn on receive interrupt
+		}
 		if (timerOverflow % 32 == 0) {
 			// increment timerOverflow so we don't drop back in here on the next loop and go to sleep
 			timerOverflow++;
@@ -219,33 +260,6 @@ void main(void) {
 			// recieve overflow
 			SPEN = 0;
 			SPEN = 1;
-		}
-		while (rxStart != rxEnd) {
-			char rx = rxBuf[rxStart % RX_BUF_SIZE];
-			hasRx = 1;
-			rxStart++;
-			if (softwareAddressing) {
-				switch (state) {
-					case STATE_WANT_SEQUENCE_NUMBER :
-						state = STATE_WANT_COMMAND;
-						sequenceNumber = rx;
-						break;
-					case STATE_WANT_COMMAND :
-						state = STATE_WANT_MAGIC_1;
-						executeCommand(rx);
-						break;
-					default :
-						if (rx == cellMagic[state]) {
-							state++;
-						} else {
-							state = STATE_WANT_MAGIC_1;
-						}
-				}
-//				txByte(state);
-//				crlf();
-			} else {
-				executeCommand(rx);
-			}
 		}
 		if (automatic) {
 			setIShunt(calculateTargetIShunt());
