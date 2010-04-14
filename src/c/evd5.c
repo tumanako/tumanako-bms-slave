@@ -39,8 +39,8 @@
 #define MAX_POT 63
 
 #define RX_BUF_SIZE 16
-#define EEPROM_CELL_ID_LOW 0x0F
-#define EEPROM_CELL_ID_HIGH 0x10
+#define EEPROM_CELL_ID_LOW 0x10
+#define EEPROM_CELL_ID_HIGH 0x11
 
 // packet
 // 4 character start-of-packet string "helo"
