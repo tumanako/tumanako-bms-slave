@@ -216,7 +216,9 @@ void main(void) {
 	TMR1IE = 1;			// enable interrupt
 	TMR1ON = 1;			// turn it on
 
-	//writeCellID(0x3033);
+#ifdef CELL_ID
+	writeCellID(CELL_ID);
+#endif
 	initCellMagic();
 
 	red(150);
@@ -605,6 +607,7 @@ void initCellMagic() {
 	cellMagic[5] = readEEPROM(EEPROM_CELL_ID_LOW);
 }
 
+#ifdef CELL_ID
 void writeCellID(unsigned short cellID) {
 	sleep(100);
 	writeEEPROM(EEPROM_CELL_ID_HIGH, (unsigned char) ((cellID & 0xFF00) >> 8));
@@ -612,6 +615,7 @@ void writeCellID(unsigned short cellID) {
 	writeEEPROM(EEPROM_CELL_ID_LOW, (unsigned char) cellID & 0x00FF);
 	sleep(100);
 }
+#endif
 
 #ifdef MAP_CURRENT_MATRIX
 void mapCurrentMatrix() {
