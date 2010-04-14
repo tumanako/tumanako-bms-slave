@@ -606,8 +606,11 @@ void initCellMagic() {
 }
 
 void writeCellID(unsigned short cellID) {
+	sleep(100);
 	writeEEPROM(EEPROM_CELL_ID_HIGH, (unsigned char) ((cellID & 0xFF00) >> 8));
+	sleep(100);
 	writeEEPROM(EEPROM_CELL_ID_LOW, (unsigned char) cellID & 0x00FF);
+	sleep(100);
 }
 
 #ifdef MAP_CURRENT_MATRIX
