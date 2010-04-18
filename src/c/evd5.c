@@ -106,7 +106,7 @@ volatile unsigned char rxEnd = 0;
 volatile unsigned char timerOverflow = 1;
 
 #define CELL_MAGIC_ADDR			0x140
-#define STATUS_START_ADDR		CELL_MAGIC_ADDR + 4
+#define CELL_ID_ADDR			CELL_MAGIC_ADDR + 4
 #define I_SHUNT_ADDR			CELL_MAGIC_ADDR + 6
 #define V_CELL_ADDR			I_SHUNT_ADDR + 2
 #define V_SHUNT_ADDR			V_CELL_ADDR + 2
@@ -119,8 +119,9 @@ volatile unsigned char timerOverflow = 1;
 #define SOFTWARE_ADDRESSING_ADDR	HAS_RX_ADDR + 1
 #define AUTOMATIC_ADDR			SOFTWARE_ADDRESSING_ADDR + 1
 
-// magic string at start of packet (includes cell ID)
-char at CELL_MAGIC_ADDR cellMagic[6];
+// magic string at start of packet (includes cellID)
+char at CELL_MAGIC_ADDR cellMagic[4];
+volatile unsigned short at CELL_ID_ADDR cellID;
 volatile unsigned short at I_SHUNT_ADDR iShunt;
 volatile unsigned short at V_CELL_ADDR vCell;
 volatile unsigned short at V_SHUNT_ADDR vShunt;
@@ -485,9 +486,8 @@ void txTargetIShunt() {
 }
 
 void txBinStatus() {
-	unsigned char *buf = (unsigned char *) &iShunt;
+	unsigned char *buf = (unsigned char *) &cellID;
 	int i;
-	buf -= 2;
 	for (i = 0; i < EVD5_STATUS_LENGTH; i++) {
 		tx(*buf);
 		buf++;
