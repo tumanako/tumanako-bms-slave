@@ -39,8 +39,8 @@
 #define MAX_POT 63
 
 #define RX_BUF_SIZE 16
-#define EEPROM_CELL_ID_LOW 0x10
-#define EEPROM_CELL_ID_HIGH 0x11
+// 16 bit cell id
+#define EEPROM_CELL_ID 0x10
 
 // packet
 // 4 character start-of-packet string "helo"
@@ -134,6 +134,7 @@ volatile char at V_SHUNT_POT_ADDR vShuntPot = MAX_POT;
 volatile unsigned char at HAS_RX_ADDR hasRx = 0;
 volatile unsigned char at SOFTWARE_ADDRESSING_ADDR softwareAddressing = 1;
 volatile unsigned char at AUTOMATIC_ADDR automatic = 1;
+volatile unsigned char at CRC_ADDR crc = 0;
 
 volatile unsigned char state = STATE_WANT_MAGIC_1;
 
@@ -603,16 +604,17 @@ void initCellMagic() {
 	cellMagic[1] = 'e';
 	cellMagic[2] = 'l';
 	cellMagic[3] = 'o';
-	cellMagic[4] = readEEPROM(EEPROM_CELL_ID_HIGH);
-	cellMagic[5] = readEEPROM(EEPROM_CELL_ID_LOW);
+	cellMagic[4] = readEEPROM(EEPROM_CELL_ID);
+	cellMagic[5] = readEEPROM(EEPROM_CELL_ID + 1);
 }
 
 #ifdef CELL_ID
 void writeCellID(unsigned short cellID) {
 	sleep(100);
-	writeEEPROM(EEPROM_CELL_ID_HIGH, (unsigned char) ((cellID & 0xFF00) >> 8));
+	// SDCC is little endian, so write low byte first
+	writeEEPROM(EEPROM_CELL_ID, (unsigned char) cellID & 0x00FF);
 	sleep(100);
-	writeEEPROM(EEPROM_CELL_ID_LOW, (unsigned char) cellID & 0x00FF);
+	writeEEPROM(EEPROM_CELL_ID + 1, (unsigned char) ((cellID & 0xFF00) >> 8));
 	sleep(100);
 }
 #endif
