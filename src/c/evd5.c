@@ -121,8 +121,14 @@ volatile unsigned char timerOverflow = 1;
 #define AUTOMATIC_ADDR			SOFTWARE_ADDRESSING_ADDR + 1
 #define CRC_ADDR			AUTOMATIC_ADDR + 1
 
+// we define the location of the main loop variables to simplify CRC calculation
+#define LOCAL_I_SHUNT_ADDR		CRC_ADDR + 1
+#define LOCAL_V_CELL_ADDR		LOCAL_I_SHUNT_ADDR + 2
+#define LOCAL_TEMPERATURE_ADDR		LOCAL_V_CELL_ADDR + 2
+#define LOCAL_V_SHUNT_ADDR		LOCAL_TEMPERATURE_ADDR + 2
+
 // magic string at start of packet (includes cellID)
-char at CELL_MAGIC_ADDR cellMagic[4];
+volatile char at CELL_MAGIC_ADDR cellMagic[4];
 volatile unsigned short at CELL_ID_ADDR cellID;
 volatile unsigned short at I_SHUNT_ADDR iShunt;
 volatile unsigned short at V_CELL_ADDR vCell;
@@ -139,7 +145,7 @@ volatile unsigned char at SOFTWARE_ADDRESSING_ADDR softwareAddressing = 1;
 volatile unsigned char at AUTOMATIC_ADDR automatic = 1;
 volatile crc_t at CRC_ADDR crc = 0;
 
-volatile unsigned char state = STATE_WANT_MAGIC_1;
+unsigned char state = STATE_WANT_MAGIC_1;
 
 void interruptHandler(void) __interrupt 0 {
 	if (RCIF) {
@@ -240,10 +246,10 @@ void main(void) {
 			green(10);
 		}
 		{
-			unsigned short localIShunt = getIShunt();
-			unsigned short localTemperature = getTemperature();
-			unsigned short localVCell = getVCell();
-			unsigned short localVShunt = getVShunt();
+			unsigned short at LOCAL_I_SHUNT_ADDR localIShunt = getIShunt();
+			unsigned short at LOCAL_V_CELL_ADDR localTemperature = getTemperature();
+			unsigned short at LOCAL_TEMPERATURE_ADDR localVCell = getVCell();
+			unsigned short at LOCAL_V_SHUNT_ADDR localVShunt = getVShunt();
 			// turn off receive interrupt
 			RCIE = 0;
 			iShunt = localIShunt;
@@ -490,10 +496,7 @@ void txTargetIShunt() {
 void txBinStatus() {
 	unsigned char *buf = (unsigned char *) &cellID;
 	int i;
-	crc = crc_init();
-	crc = crc_update(crc, buf, EVD5_STATUS_LENGTH - 2);
-	crc = crc_finalize(crc);
-
+	
 	for (i = 0; i < EVD5_STATUS_LENGTH; i++) {
 		tx(*buf);
 		buf++;
@@ -588,7 +591,7 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		return;
 	}
 	difference = iShunt - targetShuntCurrent;
-	if (abs(difference) < SHUNT_CURRENT_HYSTERISIS) {
+	if (sabs(difference) < SHUNT_CURRENT_HYSTERISIS) {
 		return;
 	}
 	if (difference < 0) {

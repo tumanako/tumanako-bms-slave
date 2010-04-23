@@ -29,6 +29,7 @@ void tx(unsigned char c);
 void txByte(unsigned char b);
 void txShort(unsigned short i);
 
+unsigned short sabs(short s);
 void sleep(unsigned char time);
 
 void writeEEPROM(unsigned char address, unsigned char value);
