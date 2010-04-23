@@ -8,6 +8,8 @@
       <item>util.c</item>
       <item>util.h</item>
       <item>evd5.h</item>
+      <item>crc.c</item>
+      <item>crc.h</item>
     </files>
     <description/>
     <version>0.1</version>

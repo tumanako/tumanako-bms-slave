@@ -66,13 +66,6 @@ void txBin10(unsigned short c) {
 }
 #endif
 
-unsigned short abs(short s) {
-	if (s < 0) {
-		return -1 * s;
-	}
-	return s;
-}
-
 void sleep(unsigned char time) {
 	time = TMR1H + time;
 	while (TMR1H != time) {
@@ -147,3 +140,4 @@ unsigned short adc(unsigned char con) {
 	}
 	return result / i;
 }
+

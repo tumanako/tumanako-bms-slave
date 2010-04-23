@@ -36,6 +36,7 @@ struct evd5_status_t {
 	unsigned char softwareAddressing;
 	// true if we are controlling the shunt current automatically
 	unsigned char automatic;
+	unsigned int crc;
 };
 
-#define EVD5_STATUS_LENGTH 18
+#define EVD5_STATUS_LENGTH 20

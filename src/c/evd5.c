@@ -23,6 +23,7 @@
 #include "pic/pic16f688.h"
 #include "util.h"
 #include "evd5.h"
+#include "crc.h"
 
 //#define SEND_BINARY
 #define SHUNT_CIRCUIT_FIX
@@ -39,7 +40,7 @@
 #define MAX_POT 63
 
 #define RX_BUF_SIZE 16
-// 16 bit cell id
+// SDCC is little endian
 #define EEPROM_CELL_ID 0x10
 
 // packet
@@ -118,6 +119,7 @@ volatile unsigned char timerOverflow = 1;
 #define HAS_RX_ADDR			V_SHUNT_POT_ADDR + 1
 #define SOFTWARE_ADDRESSING_ADDR	HAS_RX_ADDR + 1
 #define AUTOMATIC_ADDR			SOFTWARE_ADDRESSING_ADDR + 1
+#define CRC_ADDR			AUTOMATIC_ADDR + 1
 
 // magic string at start of packet (includes cellID)
 char at CELL_MAGIC_ADDR cellMagic[4];
@@ -135,7 +137,7 @@ volatile char at V_SHUNT_POT_ADDR vShuntPot = MAX_POT;
 volatile unsigned char at HAS_RX_ADDR hasRx = 0;
 volatile unsigned char at SOFTWARE_ADDRESSING_ADDR softwareAddressing = 1;
 volatile unsigned char at AUTOMATIC_ADDR automatic = 1;
-volatile unsigned char at CRC_ADDR crc = 0;
+volatile crc_t at CRC_ADDR crc = 0;
 
 volatile unsigned char state = STATE_WANT_MAGIC_1;
 
@@ -254,7 +256,7 @@ void main(void) {
 		if (timerOverflow % 32 == 0) {
 			// increment timerOverflow so we don't drop back in here on the next loop and go to sleep
 			timerOverflow++;
-			if (hasRx == 0 && vCell < SHUNT_START_VOLTAGE) {
+			if (hasRx == 0) {
 				halt();
 			}
 			hasRx = 0;
@@ -488,6 +490,10 @@ void txTargetIShunt() {
 void txBinStatus() {
 	unsigned char *buf = (unsigned char *) &cellID;
 	int i;
+	crc = crc_init();
+	crc = crc_update(crc, buf, EVD5_STATUS_LENGTH - 2);
+	crc = crc_finalize(crc);
+
 	for (i = 0; i < EVD5_STATUS_LENGTH; i++) {
 		tx(*buf);
 		buf++;
