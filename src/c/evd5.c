@@ -1,5 +1,5 @@
 /*
-    Copyright 2009 Tom Parker
+    Copyright 2009-2010 Tom Parker
 
     This file is part of the Tumanako EVD5 BMS.
 
@@ -244,14 +244,15 @@ void main(void) {
 			unsigned short localTemperature = getTemperature();
 			unsigned short localVCell = getVCell();
 			unsigned short localVShunt = getVShunt();
-			// turn off receive interrupt
-			RCIE = 0;
+
+			// turn off interrupts
+			disableInterrupts();
 			iShunt = localIShunt;
 			temperature = localTemperature;
 			vCell = localVCell;
 			vShunt = localVShunt;
-			RCIE = 1;
-			// turn on receive interrupt
+			// turn on interrupts
+			GIE = 1;
 		}
 		if (timerOverflow % 32 == 0) {
 			// increment timerOverflow so we don't drop back in here on the next loop and go to sleep

@@ -1,5 +1,5 @@
 /*
-    Copyright 2009 Tom Parker
+    Copyright 2009-2010 Tom Parker
 
     This file is part of the Tumanako EVD5 BMS.
 
@@ -40,6 +40,10 @@ unsigned short adc(unsigned char c);
 #define green(time) RA5 = 1; RC2 = 0; sleep(time); RA5 = 0
 #define red(time) RC2 = 1; RA5 = 0; sleep(time); RC2 = 0
 #define crlf() tx(10); tx(13)
+
+#define disableInterrupts() _asm \
+	include disableInterrupts.asm \
+_endasm
 
 #define BIN(x) \
 ( ((0x##x##L & 0x00000001L) ? 0x01 : 0) \
