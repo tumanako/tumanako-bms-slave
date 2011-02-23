@@ -41,7 +41,8 @@
 
 #define RX_BUF_SIZE 16
 // SDCC is little endian
-#define EEPROM_CELL_ID 0x10
+#define EEPROM_CELL_ID_ADDRESS 0x10
+//#define CELL_ID 1  //Only needs to be defined the first time the pic is programed
 
 // packet
 // 4 character start-of-packet string "helo"
@@ -611,17 +612,17 @@ void initCellMagic() {
 	cellMagic[1] = 'e';
 	cellMagic[2] = 'l';
 	cellMagic[3] = 'o';
-	cellMagic[4] = readEEPROM(EEPROM_CELL_ID);
-	cellMagic[5] = readEEPROM(EEPROM_CELL_ID + 1);
+	cellMagic[4] = readEEPROM(EEPROM_CELL_ID_ADDRESS);
+	cellMagic[5] = readEEPROM(EEPROM_CELL_ID_ADDRESS + 1);
 }
 
 #ifdef CELL_ID
 void writeCellID(unsigned short cellID) {
 	sleep(100);
 	// SDCC is little endian, so write low byte first
-	writeEEPROM(EEPROM_CELL_ID, (unsigned char) cellID & 0x00FF);
+	writeEEPROM(EEPROM_CELL_ID_ADDRESS, (unsigned char) cellID & 0x00FF);
 	sleep(100);
-	writeEEPROM(EEPROM_CELL_ID + 1, (unsigned char) ((cellID & 0xFF00) >> 8));
+	writeEEPROM(EEPROM_CELL_ID_ADDRESS + 1, (unsigned char) ((cellID & 0xFF00) >> 8));
 	sleep(100);
 }
 #endif
