@@ -17,7 +17,12 @@
 #define __CRC_H__
 
 #include <stdint.h>
+// gcc doesn't like SDCC's stdlib
+#ifdef SDCC
 #include <stdlib.h>
+#else
+typedef unsigned int size_t;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

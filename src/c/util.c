@@ -1,5 +1,5 @@
 /*
-    Copyright 2009 Tom Parker
+    Copyright 2009-2012 Tom Parker
 
     This file is part of the Tumanako EVD5 BMS.
 
@@ -17,6 +17,8 @@
     along with the Tumanako EVD5 BMS.  If not, see 
     <http://www.gnu.org/licenses/>.
 */
+
+#include "gnuc.h"
 
 /* Define processor and include header file. */
 #define __16f688
@@ -125,10 +127,12 @@ unsigned short adc(unsigned char con) {
 		ADCON0 = con;
 	
 		// TODO why do we have a NOP here?
+#ifdef SDCC
 		_asm
 			nop
 		_endasm;
-	
+#endif
+
 		GO = 1;
 		while (GO) {
 			// spin

@@ -41,9 +41,13 @@ unsigned short adc(unsigned char c);
 #define red(time) RC2 = 1; RA5 = 0; sleep(time); RC2 = 0
 #define crlf() tx(10); tx(13)
 
+#ifdef SDCC
 #define disableInterrupts() _asm \
 	include disableInterrupts.asm \
 _endasm
+#else
+#define disableInterrupts()
+#endif
 
 #define BIN(x) \
 ( ((0x##x##L & 0x00000001L) ? 0x01 : 0) \

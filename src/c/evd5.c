@@ -1,5 +1,5 @@
 /*
-    Copyright 2009-2010 Tom Parker
+    Copyright 2009-2012 Tom Parker
 
     This file is part of the Tumanako EVD5 BMS.
 
@@ -17,6 +17,8 @@
     along with the Tumanako EVD5 BMS.  If not, see 
     <http://www.gnu.org/licenses/>.
 */
+
+#include "gnuc.h"
 
 /* Define processor and include header file. */
 #define __16f688
@@ -60,11 +62,17 @@
 #define STATE_WANT_COMMAND 7
 
 /* Setup chip configuration */
+#ifdef SDCC
 typedef unsigned int config;
 config at 0x2007 __CONFIG = _CP_OFF & _CPD_OFF & _BOD_OFF & _PWRTE_ON & _WDT_OFF & _INTRC_OSC_NOCLKOUT & _MCLRE_ON & _FCMEN_OFF & _IESO_OFF;
+#endif
 
 void main();
+#ifdef SDCC
 void interruptHandler(void) __interrupt 0;
+#else
+void interruptHandler(void);
+#endif
 void executeCommand(unsigned char rx);
 void halt();
 
@@ -123,26 +131,30 @@ volatile unsigned char timerOverflow = 1;
 #define CRC_ADDR			AUTOMATIC_ADDR + 1
 
 // magic string at start of packet (includes cellID)
-char at CELL_MAGIC_ADDR cellMagic[4];
-volatile unsigned short at CELL_ID_ADDR cellID;
-volatile unsigned short at I_SHUNT_ADDR iShunt;
-volatile unsigned short at V_CELL_ADDR vCell;
-volatile unsigned short at V_SHUNT_ADDR vShunt;
-volatile unsigned short at TEMPERATURE_ADDR temperature;
-volatile unsigned short at MIN_CURRENT_ADDR minCurrent = 0;
-volatile unsigned char at SEQUENCE_NUMBER_ADDR sequenceNumber;
+char at (CELL_MAGIC_ADDR) cellMagic[4];
+volatile unsigned short at (CELL_ID_ADDR) cellID;
+volatile unsigned short at (I_SHUNT_ADDR) iShunt;
+volatile unsigned short at (V_CELL_ADDR) vCell;
+volatile unsigned short at (V_SHUNT_ADDR) vShunt;
+volatile unsigned short at (TEMPERATURE_ADDR) temperature;
+volatile unsigned short at (MIN_CURRENT_ADDR) minCurrent = 0;
+volatile unsigned char at (SEQUENCE_NUMBER_ADDR) sequenceNumber;
 // lower numbers == less gain
-volatile char at GAIN_POT_ADDR gainPot = MAX_POT;
+volatile char at (GAIN_POT_ADDR) gainPot = MAX_POT;
 // lower numbers == less voltage
-volatile char at V_SHUNT_POT_ADDR vShuntPot = MAX_POT;
-volatile unsigned char at HAS_RX_ADDR hasRx = 0;
-volatile unsigned char at SOFTWARE_ADDRESSING_ADDR softwareAddressing = 1;
-volatile unsigned char at AUTOMATIC_ADDR automatic = 1;
-volatile crc_t at CRC_ADDR crc = 0;
+volatile char at (V_SHUNT_POT_ADDR) vShuntPot = MAX_POT;
+volatile unsigned char at (HAS_RX_ADDR) hasRx = 0;
+volatile unsigned char at (SOFTWARE_ADDRESSING_ADDR) softwareAddressing = 1;
+volatile unsigned char at (AUTOMATIC_ADDR) automatic = 1;
+volatile crc_t at (CRC_ADDR) crc = 0;
 
 volatile unsigned char state = STATE_WANT_MAGIC_1;
 
+#ifdef SDCC
 void interruptHandler(void) __interrupt 0 {
+#else
+void interruptHandler(void) {
+#endif
 	if (RCIF) {
 		rxBuf[rxEnd % RX_BUF_SIZE] = RCREG;
 		rxEnd++;
@@ -535,9 +547,11 @@ void halt() {
 	vddOff();
 	TMR1IE = 0;			// disable timer interrupt so it doesn't wake us up
 	WUE = 1;			// wake up if we receive something (recieve interrupt still enabled)
+#ifdef SDCC
 	_asm
 		sleep
 	_endasm;
+#endif
 	TMR1IE = 1;			// enable timer
 	green(10);
 	red(10);
