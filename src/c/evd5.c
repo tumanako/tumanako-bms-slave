@@ -433,8 +433,8 @@ void txTemperature() {
 
 void vddOn() {
 	RC0 = 0;	// turn on FET Qx02
-	setGainPot(0);
-	setVShuntPot(0);
+	setGainPot(GAIN_POT_OFF);
+	setVShuntPot(V_SHUNT_POT_OFF);
 }
 
 void vddOff() {
