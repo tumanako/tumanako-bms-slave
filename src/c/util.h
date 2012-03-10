@@ -37,8 +37,12 @@ unsigned char readEEPROM(unsigned char address);
 
 unsigned short adc(unsigned char c);
 
-#define green(time) RA5 = 1; RC2 = 0; sleep(time); RA5 = 0
-#define red(time) RC2 = 1; RA5 = 0; sleep(time); RC2 = 0
+void restoreLed();
+
+#define setRed() RC2 = 1; RA5 = 0
+#define setGreen() RA5 = 1; RC2 = 0;
+#define green(time) setGreen(); sleep(time); RA5 = 0; restoreLed()
+#define red(time) setRed(); sleep(time); RC2 = 0; restoreLed()
 #define crlf() tx(10); tx(13)
 
 #ifdef SDCC

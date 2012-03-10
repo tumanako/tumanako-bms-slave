@@ -31,8 +31,9 @@
 #define SHUNT_CIRCUIT_FIX
 #define MAP_CURRENT_MATRIX
 
+#define FULL_VOLTAGE 3600
 #define SHUNT_START_VOLTAGE 3550
-#define MAX_CELL_VOLTAGE 3600
+#define MAX_CELL_VOLTAGE 3800
 #define SHUNT_CURRENT_HYSTERISIS 100
 #define MAX_SHUNT_CURRENT 500
 #define ABS_MAX_SHUNT_CURRENT 750
@@ -468,6 +469,7 @@ void setVShuntPot(unsigned char c) {
 	}
 	RA2 = 1;			// release chip select CS0 (set high)
 	vShuntPot = c;
+	restoreLed();
 }
 
 void setGainPot(unsigned char c) {
@@ -493,6 +495,7 @@ void setGainPot(unsigned char c) {
 	}
 	RA0 = 1;			// release chip select CS0 (set high)
 	gainPot = c;
+	restoreLed();
 }
 
 void txTargetIShunt() {
@@ -628,6 +631,14 @@ void initCellMagic() {
 	cellMagic[3] = 'o';
 	cellMagic[4] = readEEPROM(EEPROM_CELL_ID_ADDRESS);
 	cellMagic[5] = readEEPROM(EEPROM_CELL_ID_ADDRESS + 1);
+}
+
+void restoreLed() {
+	if (minCurrent) {
+		setRed();
+	} else if (vCell > FULL_VOLTAGE) {
+		setGreen();
+	}
 }
 
 #ifdef CELL_ID
