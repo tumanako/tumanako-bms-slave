@@ -33,8 +33,6 @@
 #define RESISTOR_SHUNT 1
 
 #define FULL_VOLTAGE 3600
-#define SHUNT_START_VOLTAGE 3550
-#define MAX_CELL_VOLTAGE 3800
 #define SHUNT_CURRENT_HYSTERISIS 100
 #define MAX_SHUNT_CURRENT 500
 #define ABS_MAX_SHUNT_CURRENT 750
@@ -88,7 +86,6 @@ unsigned short getVShunt();
 void txBinStatus();
 void txIShunt();
 void txStatus();
-void txTargetIShunt();
 void txTemperature();
 void txVCell();
 void txVShunt();
@@ -100,7 +97,6 @@ unsigned char isVddOn();
 void mapCurrentMatrix();
 #endif
 
-unsigned short calculateTargetIShunt();
 void setIShunt(unsigned short i);
 void setVShuntPot(unsigned char c);
 void setGainPot(unsigned char c);
@@ -286,7 +282,7 @@ void main(void) {
 			SPEN = 1;
 		}
 		if (automatic) {
-			setIShunt(calculateTargetIShunt());
+			setIShunt(minCurrent);
 		}
 	}
 }
@@ -501,12 +497,6 @@ void setGainPot(unsigned char c) {
 	restoreLed();
 }
 
-void txTargetIShunt() {
-	tx('Q');
-	tx('=');
-	txShort(calculateTargetIShunt());
-}
-
 void txBinStatus() {
 	unsigned char *buf = (unsigned char *) &cellID;
 	int i;
@@ -526,8 +516,6 @@ void txStatus() {
 	txVShunt();
 	tx(' ');
 	txIShunt();
-	tx(' ');
-	txTargetIShunt();
 	tx(' ');
 	txTemperature();
 	tx(' ');
@@ -562,34 +550,6 @@ void halt() {
 	green(10);
 	red(10);
 	vddOn();
-}
-
-
-unsigned short calculateTargetIShunt() {
-	unsigned short cellVoltage = vCell;
-	long difference;
-	short result;
-	if (cellVoltage < SHUNT_START_VOLTAGE) {
-		return minCurrent;
-	}
-	if (cellVoltage > MAX_CELL_VOLTAGE) {
-		return MAX_SHUNT_CURRENT;
-	}
-	difference = (long) cellVoltage - SHUNT_START_VOLTAGE;
-	result = (long) difference * 1000l / (MAX_CELL_VOLTAGE - SHUNT_START_VOLTAGE) * MAX_SHUNT_CURRENT / 1000;
-	if (result > MAX_SHUNT_CURRENT || result < 0) {
-		tx('I');
-		tx('t');
-		tx('!');
-		txShort(result);
-		crlf();
-		return 0;
-	}
-	if (result > minCurrent) {
-		return result;
-	} else {
-		return minCurrent;
-	}
 }
 
 void setIShunt(unsigned short targetShuntCurrent) {
