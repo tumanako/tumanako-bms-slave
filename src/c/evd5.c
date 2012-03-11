@@ -29,7 +29,8 @@
 
 //#define SEND_BINARY
 #define SHUNT_CIRCUIT_FIX
-#define MAP_CURRENT_MATRIX
+//#define MAP_CURRENT_MATRIX
+#define RESISTOR_SHUNT 1
 
 #define FULL_VOLTAGE 3600
 #define SHUNT_START_VOLTAGE 3550
@@ -39,7 +40,9 @@
 #define ABS_MAX_SHUNT_CURRENT 750
 
 #define GAIN_POT_OFF 20
+#define GAIN_POT_RESISTOR_ON 40
 #define V_SHUNT_POT_OFF 20
+#define V_SHUNT_POT_RESISTOR_ON 40
 #define MAX_POT 63
 
 #define RX_BUF_SIZE 16
@@ -597,6 +600,12 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		setVShuntPot(V_SHUNT_POT_OFF);
 		return;
 	}
+#ifdef RESISTOR_SHUNT
+	if (targetShuntCurrent != 0 && (gainPot != GAIN_POT_RESISTOR_ON || vShuntPot != V_SHUNT_POT_RESISTOR_ON)) {
+		setGainPot(GAIN_POT_RESISTOR_ON);
+		setVShuntPot(V_SHUNT_POT_RESISTOR_ON);
+	}
+#else
 	// first do current limit
 	if (iShunt > ABS_MAX_SHUNT_CURRENT) {
 		setGainPot(GAIN_POT_OFF);
@@ -622,6 +631,7 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		setVShuntPot(vShuntPot - 1);
 		green(2);
 	}
+#endif
 }
 
 void initCellMagic() {
