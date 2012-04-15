@@ -54,20 +54,6 @@ void txByte(unsigned char b) {
 	tx(0x30 + ones);
 }
 
-#ifdef SEND_BINARY
-void txBin10(unsigned short c) {
-	unsigned char i;
-
-	for (i = 0; i < 10; i++) {
-		if ((c << i) & 0x0200) {
-			tx(0x31);
-		} else {
-			tx(0x30);
-		}
-	}
-}
-#endif
-
 unsigned short sabs(short s) {
 	if (s < 0) {
 		return -1 * s;

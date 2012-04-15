@@ -27,7 +27,6 @@
 #include "evd5.h"
 #include "crc.h"
 
-//#define SEND_BINARY
 //#define MAP_CURRENT_MATRIX
 #define RESISTOR_SHUNT 1
 
@@ -358,11 +357,7 @@ void txVCell() {
 	tx('V');
 	tx('c');
 	tx('=');
-#ifdef SEND_BINARY
-	txBin10(~adc(BIN(10000101)));
-#else
 	txShort(vCell);
-#endif
 }
 
 unsigned short getTemperature() {
@@ -385,14 +380,7 @@ void txVShunt() {
 	tx('V');
 	tx('s');
 	tx('=');
-#ifdef SEND_BINARY
-	{
-		unsigned short shunt = adc(BIN(10001101));
-		txBin10(~shunt & 0x03FF);
-	}
-#else
 	txShort(vShunt);
-#endif
 }
 
 unsigned short getIShunt() {
@@ -404,11 +392,7 @@ void txIShunt() {
 	tx('I');
 	tx('s');
 	tx('=');
-#ifdef SEND_BINARY
-	txBin10(adc(BIN(10011101)));
-#else
 	txShort(iShunt);
-#endif
 }
 
 void txTemperature() {
@@ -417,11 +401,7 @@ void txTemperature() {
 	tx('V');
 	tx('t');
 	tx('=');
-#ifdef SEND_BINARY
-	txBin10(~adc(BIN(10010101)) & 0x03FF);
-#else
 	txShort(temperature);
-#endif
 }
 
 void vddOn() {
