@@ -28,7 +28,6 @@
 #include "crc.h"
 
 //#define SEND_BINARY
-#define SHUNT_CIRCUIT_FIX
 //#define MAP_CURRENT_MATRIX
 #define RESISTOR_SHUNT 1
 
@@ -398,12 +397,7 @@ void txVShunt() {
 
 unsigned short getIShunt() {
 	unsigned short result = adc(BIN(11011101));
-#ifdef SHUNT_CIRCUIT_FIX
 	return 1225l * 10l * result * 10l / 49l / 1024l;
-#else
-	// 7 is a constant obtained by measuring the actual current
-	return (unsigned long) 1225 * 10 * result / 1024 / 7;
-#endif
 }
 
 void txIShunt() {
