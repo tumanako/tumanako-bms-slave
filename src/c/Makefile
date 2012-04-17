@@ -22,4 +22,4 @@ clean:
 
 write: all
 	pk2cmd -PPIC16F688 -E -M -Z -Fevd5.hex -R
-	pk2cmd -PPIC16F688 -GE10-17 -R -T 
+	pk2cmd -PPIC16F688 -GE10-17 -R 
