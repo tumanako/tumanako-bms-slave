@@ -139,7 +139,6 @@ volatile char at (V_SHUNT_POT_ADDR) vShuntPot = MAX_POT;
 volatile unsigned char at (HAS_RX_ADDR) hasRx = 0;
 volatile unsigned char at (SOFTWARE_ADDRESSING_ADDR) softwareAddressing = 1;
 volatile unsigned char at (AUTOMATIC_ADDR) automatic = 1;
-volatile crc_t at (CRC_ADDR) crc = 0;
 
 volatile unsigned char state = STATE_WANT_MAGIC_1;
 
@@ -436,15 +435,17 @@ void setGainPot(unsigned char c) {
 
 void txBinStatus() {
 	unsigned char *buf = (unsigned char *) &cellID;
+	short crc = crc_init();
 	int i;
-	crc = crc_init();
-	crc = crc_update(crc, buf, EVD5_STATUS_LENGTH - 2);
-	crc = crc_finalize(crc);
 
-	for (i = 0; i < EVD5_STATUS_LENGTH; i++) {
+	for (i = 0; i < EVD5_STATUS_LENGTH - 2; i++) {
 		tx(*buf);
+		crc = crc_update(crc, buf, 1);
 		buf++;
 	}
+	crc = crc_finalize(crc);
+	tx(crc);
+	tx(crc >> 8);
 }
 
 void halt() {
