@@ -82,11 +82,6 @@ unsigned short getVCell();
 unsigned short getVShunt();
 
 void txBinStatus();
-void txIShunt();
-void txStatus();
-void txTemperature();
-void txVCell();
-void txVShunt();
 
 void vddOn();
 void vddOff();
@@ -316,9 +311,6 @@ void executeCommand(unsigned char rx) {
 			mapCurrentMatrix();
 			break;
 #endif
-		case '?' :
-			txStatus();
-			break;
 		case '/' :
 			txBinStatus();
 			break;
@@ -353,13 +345,6 @@ void executeCommand(unsigned char rx) {
 	green(1);
 }
 
-void txVCell() {
-	tx('V');
-	tx('c');
-	tx('=');
-	txShort(vCell);
-}
-
 unsigned short getTemperature() {
 	unsigned short result = ~adc(BIN(10010101)) & 0x03FF;
 	return (10700000 - 11145l * result) / 1000;
@@ -376,32 +361,10 @@ unsigned short getVShunt() {
 	return (unsigned long) vCell * shunt / 1024;
 }
 
-void txVShunt() {
-	tx('V');
-	tx('s');
-	tx('=');
-	txShort(vShunt);
-}
 
 unsigned short getIShunt() {
 	unsigned short result = adc(BIN(11011101));
 	return 1225l * 10l * result * 10l / 49l / 1024l;
-}
-
-void txIShunt() {
-	tx('I');
-	tx('s');
-	tx('=');
-	txShort(iShunt);
-}
-
-void txTemperature() {
-	// we take the compliment because the original calculation requires it
-	// TODO work out new calculation that doesn't take the compliment
-	tx('V');
-	tx('t');
-	tx('=');
-	txShort(temperature);
 }
 
 void vddOn() {
@@ -482,30 +445,6 @@ void txBinStatus() {
 		tx(*buf);
 		buf++;
 	}
-}
-
-void txStatus() {
-	txVCell();
-	tx(' ');
-	txVShunt();
-	tx(' ');
-	txIShunt();
-	tx(' ');
-	txTemperature();
-	tx(' ');
-	tx('V');
-	tx('g');
-	tx('=');
-	txByte(vShuntPot);
-	tx(' ');
-	tx('g');
-	tx('=');
-	txByte(gainPot);
-	tx(' ');
-	tx('m');
-	tx('=');
-	txShort(minCurrent);
-	crlf();
 }
 
 void halt() {
@@ -608,7 +547,7 @@ void mapCurrentMatrix() {
 			sleep(100);
 			current = getIShunt();
 			if (current > 0) {
-				txStatus();
+				txBinStatus();
 			}
 			if (current > MAX_SHUNT_CURRENT) {
 				break;
