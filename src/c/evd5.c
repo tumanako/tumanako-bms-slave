@@ -47,19 +47,17 @@
 //#define CELL_ID 1  //Only needs to be defined the first time the pic is programed
 
 // packet
-// 4 character start-of-packet string "helo"
 // 2 character cell id
 // 1 character sequence number
 // 1 character command
-// TODO replace with enum?
-#define STATE_WANT_MAGIC_1 0
-#define STATE_WANT_MAGIC_2 1
-#define STATE_WANT_MAGIC_3 2
-#define STATE_WANT_MAGIC_4 3
-#define STATE_WANT_CELL_ID_HIGH 4
-#define STATE_WANT_CELL_ID_LOW 5
-#define STATE_WANT_SEQUENCE_NUMBER 6
-#define STATE_WANT_COMMAND 7
+// 2 character crc
+// TODO replace with enum
+#define STATE_WANT_CELL_ID_LOW 0
+#define STATE_WANT_CELL_ID_HIGH 1
+#define STATE_WANT_SEQUENCE_NUMBER 2
+#define STATE_WANT_COMMAND 3
+#define STATE_WANT_CRC_LOW 4
+#define STATE_WANT_CRC_HIGH 5
 
 /* Setup chip configuration */
 #ifdef SDCC
@@ -123,8 +121,11 @@ volatile unsigned char timerOverflow = 1;
 #define AUTOMATIC_ADDR			SOFTWARE_ADDRESSING_ADDR + 1
 #define CRC_ADDR			AUTOMATIC_ADDR + 1
 
-// magic string at start of packet (includes cellID)
-char at (CELL_MAGIC_ADDR) cellMagic[4];
+volatile unsigned char cellIdHigh;
+volatile unsigned char cellIdLow;
+volatile unsigned char command;
+unsigned short rxCRC;
+
 volatile unsigned short at (CELL_ID_ADDR) cellID;
 volatile unsigned short at (I_SHUNT_ADDR) iShunt;
 volatile unsigned short at (V_CELL_ADDR) vCell;
@@ -140,7 +141,7 @@ volatile unsigned char at (HAS_RX_ADDR) hasRx = 0;
 volatile unsigned char at (SOFTWARE_ADDRESSING_ADDR) softwareAddressing = 1;
 volatile unsigned char at (AUTOMATIC_ADDR) automatic = 1;
 
-volatile unsigned char state = STATE_WANT_MAGIC_1;
+volatile unsigned char state = STATE_WANT_CELL_ID_HIGH;
 
 #ifdef SDCC
 void interruptHandler(void) __interrupt 0 {
@@ -156,27 +157,56 @@ void interruptHandler(void) {
 		TMR1IF = 0;
 	}
 	while (rxStart != rxEnd) {
-		char rx = rxBuf[rxStart % RX_BUF_SIZE];
+		unsigned char rx = rxBuf[rxStart % RX_BUF_SIZE];
 		hasRx = 1;
 		rxStart++;
 		if (softwareAddressing) {
 			switch (state) {
+				case STATE_WANT_CELL_ID_LOW :
+					if (rx == cellIdLow) {
+						rxCRC = crc_update(crc_init(), &rx, 1);
+						state = STATE_WANT_CELL_ID_HIGH;
+					} else {
+						state = STATE_WANT_CELL_ID_LOW;
+					}
+				break;
+				case STATE_WANT_CELL_ID_HIGH :
+					if (rx == cellIdHigh) {
+						rxCRC = crc_update(rxCRC, &rx, 1);
+						state = STATE_WANT_SEQUENCE_NUMBER;
+					} else {
+						state = STATE_WANT_CELL_ID_LOW;
+					}
+					break;
 				case STATE_WANT_SEQUENCE_NUMBER :
 					state = STATE_WANT_COMMAND;
 					sequenceNumber = rx;
+					rxCRC = crc_update(rxCRC, &rx, 1);
 					break;
 				case STATE_WANT_COMMAND :
-					state = STATE_WANT_MAGIC_1;
-					executeCommand(rx);
+					state = STATE_WANT_CRC_LOW;
+					rxCRC = crc_update(rxCRC, &rx, 1);
+					rxCRC = crc_finalize(rxCRC);
+					command = rx;
+					break;
+				case STATE_WANT_CRC_LOW :
+					if (rx == (unsigned char) (rxCRC & 0x00FF)) {
+						state = STATE_WANT_CRC_HIGH;
+					} else {
+						state = STATE_WANT_CELL_ID_LOW;
+					}
+					break;
+				case STATE_WANT_CRC_HIGH :
+					if (rx == rxCRC >> 8) {
+						executeCommand(command);
+					}
+					state = STATE_WANT_CELL_ID_LOW;
 					break;
 				default :
-					if (rx == cellMagic[state]) {
-						state++;
-					} else {
-						state = STATE_WANT_MAGIC_1;
-					}
+					state = STATE_WANT_CELL_ID_LOW;
+					break;
 			}
-			//txByte(state);
+			//tx(state);
 			//crlf();
 		} else {
 			executeCommand(rx);
@@ -509,12 +539,8 @@ void setIShunt(unsigned short targetShuntCurrent) {
 }
 
 void initCellMagic() {
-	cellMagic[0] = 'h';
-	cellMagic[1] = 'e';
-	cellMagic[2] = 'l';
-	cellMagic[3] = 'o';
-	cellMagic[4] = readEEPROM(EEPROM_CELL_ID_ADDRESS);
-	cellMagic[5] = readEEPROM(EEPROM_CELL_ID_ADDRESS + 1);
+	cellIdLow = readEEPROM(EEPROM_CELL_ID_ADDRESS);
+	cellIdHigh = readEEPROM(EEPROM_CELL_ID_ADDRESS + 1);
 }
 
 void restoreLed() {
