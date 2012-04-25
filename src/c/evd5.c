@@ -106,9 +106,9 @@ volatile unsigned char rxEnd = 0;
 // incremented each time the timer overflows (skips multiples of 32)
 volatile unsigned char timerOverflow = 1;
 
-#define CELL_MAGIC_ADDR			0x140
-#define CELL_ID_ADDR			CELL_MAGIC_ADDR + 4
-#define I_SHUNT_ADDR			CELL_MAGIC_ADDR + 6
+#define CELL_ID_LOW_ADDR		0x140
+#define CELL_ID_HIGH_ADDR		CELL_ID_LOW_ADDR + 1
+#define I_SHUNT_ADDR			CELL_ID_HIGH_ADDR + 1
 #define V_CELL_ADDR			I_SHUNT_ADDR + 2
 #define V_SHUNT_ADDR			V_CELL_ADDR + 2
 #define TEMPERATURE_ADDR		V_SHUNT_ADDR + 2
@@ -121,12 +121,11 @@ volatile unsigned char timerOverflow = 1;
 #define AUTOMATIC_ADDR			SOFTWARE_ADDRESSING_ADDR + 1
 #define CRC_ADDR			AUTOMATIC_ADDR + 1
 
-volatile unsigned char cellIdHigh;
-volatile unsigned char cellIdLow;
 volatile unsigned char command;
 unsigned short rxCRC;
 
-volatile unsigned short at (CELL_ID_ADDR) cellID;
+volatile unsigned char at (CELL_ID_LOW_ADDR) cellIdLow;
+volatile unsigned char at (CELL_ID_HIGH_ADDR) cellIdHigh;
 volatile unsigned short at (I_SHUNT_ADDR) iShunt;
 volatile unsigned short at (V_CELL_ADDR) vCell;
 volatile unsigned short at (V_SHUNT_ADDR) vShunt;
@@ -464,7 +463,7 @@ void setGainPot(unsigned char c) {
 }
 
 void txBinStatus() {
-	unsigned char *buf = (unsigned char *) &cellID;
+	unsigned char *buf = (unsigned char *) &cellIdLow;
 	short crc = crc_init();
 	int i;
 
