@@ -77,7 +77,7 @@ void halt();
 unsigned short getIShunt();
 unsigned short getTemperature();
 unsigned short getVCell();
-unsigned short getVShunt();
+unsigned short getVShunt(unsigned short vCell);
 
 void txBinStatus();
 
@@ -277,7 +277,7 @@ void main(void) {
 			unsigned short localIShunt = getIShunt();
 			unsigned short localTemperature = getTemperature();
 			unsigned short localVCell = getVCell();
-			unsigned short localVShunt = getVShunt();
+			unsigned short localVShunt = getVShunt(localVCell);
 
 			// turn off interrupts
 			disableInterrupts();
@@ -374,25 +374,28 @@ void executeCommand(unsigned char rx) {
 }
 
 unsigned short getTemperature() {
-	unsigned short result = ~adc(BIN(10010101)) & 0x03FF;
-	return (10700000 - 11145l * result) / 1000;
+	unsigned short result = ~(adc(BIN(10010101)) / 1000) & 0x03FF;
+	// TODO derive this equation!
+	return (10700000l - 11145l * result) / 1000;
 }
 
 unsigned short getVCell() {
-	unsigned short result;
-	result = adc(BIN(10000101));
-	return 1254400l / result;
+	unsigned long result = adc(BIN(10000101));
+	// TODO derive this equation!
+	return 1254400000l / result;
 }
 
-unsigned short getVShunt() {
-	unsigned short shunt = adc(BIN(10001101));
-	return (unsigned long) vCell * shunt / 1024;
+unsigned short getVShunt(unsigned short vCell) {
+	unsigned long shunt = adc(BIN(10001101));
+	// TODO derive this equation!
+	return vCell * shunt / 1024 / 1000l;
 }
 
 
 unsigned short getIShunt() {
-	unsigned short result = adc(BIN(11011101));
-	return 1225l * 10l * result * 10l / 49l / 1024l;
+	unsigned long result = adc(BIN(11011101));
+	// TODO derive this equation!
+	return 1225l * result / 49l / 10240l;
 }
 
 void vddOn() {

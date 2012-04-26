@@ -96,8 +96,11 @@ void writeEEPROM(unsigned char address, unsigned char value) {
 	WREN = 0;
 }
 
-/** Make and average ADC readings until the timer reaches ADC_TIME */
-unsigned short adc(unsigned char con) {
+/**
+ * Make and average ADC readings until the timer reaches ADC_TIME
+ * @return 1000 times the actual result, in order to preserve precision
+ */
+unsigned long adc(unsigned char con) {
 	unsigned long result = 0;
 	unsigned short i = 0;
 	unsigned char end = TMR1H + ADC_TIME;
@@ -135,5 +138,7 @@ unsigned short adc(unsigned char con) {
 		result += singleResult;
 		i++;
 	}
-	return result / i;
+	// multiply by 1000 to preserve additional precision acquired by averaging
+	// 1000 is way too much, but we're already forced to use long arithmetic so why not
+	return result * 1000 / i;
 }

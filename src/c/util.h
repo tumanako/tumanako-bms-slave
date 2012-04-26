@@ -35,7 +35,7 @@ void sleep(unsigned char time);
 void writeEEPROM(unsigned char address, unsigned char value);
 unsigned char readEEPROM(unsigned char address);
 
-unsigned short adc(unsigned char c);
+unsigned long adc(unsigned char c);
 
 void restoreLed();
 
