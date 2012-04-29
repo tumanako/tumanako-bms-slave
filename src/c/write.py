@@ -82,9 +82,11 @@ if cellId == None or kelvinConnection == None or resistorShunt == None:
 
 	writeData(cellId, kelvinConnection, resistorShunt)
 
-print "invoking make"
+extra = ""
+if resistorShunt:
+	extra = extra + "-DRESISTOR_SHUNT=1"
 makeEnv = os.environ.copy()
-makeEnv["EXTRA"] = "-DRESISTOR_SHUNT=1"
+makeEnv["EXTRA"] = extra
 make = Popen(["make", "clean", "all"], env=makeEnv)
 make.wait()
 if make.returncode != 0:
