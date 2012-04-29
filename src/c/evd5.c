@@ -28,7 +28,9 @@
 #include "crc.h"
 
 //#define MAP_CURRENT_MATRIX
+#ifndef RESISTOR_SHUNT
 #define RESISTOR_SHUNT 1
+#endif
 
 #define FULL_VOLTAGE 3600
 #define SHUNT_CURRENT_HYSTERISIS 100
