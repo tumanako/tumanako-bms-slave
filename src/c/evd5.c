@@ -28,8 +28,11 @@
 #include "crc.h"
 
 //#define MAP_CURRENT_MATRIX
-#ifndef RESISTOR_SHUNT
-#define RESISTOR_SHUNT 1
+//#define RESISTOR_SHUNT
+
+#ifndef CELL_ID_LOW
+#define CELL_ID_LOW 0
+#define CELL_ID_HIGH 0
 #endif
 
 #define FULL_VOLTAGE 3600
@@ -46,7 +49,6 @@
 #define RX_BUF_SIZE 16
 // SDCC is little endian
 #define EEPROM_CELL_ID_ADDRESS 0x10
-//#define CELL_ID 1  //Only needs to be defined the first time the pic is programed
 
 // packet
 // 2 character cell id
@@ -94,9 +96,6 @@ void setIShunt(unsigned short i);
 void setVShuntPot(unsigned char c);
 void setGainPot(unsigned char c);
 
-void writeCellID(unsigned short serial);
-void initCellMagic();
-
 // the number of times we have seen overcurrent on the shunt
 // TODO provide interface to get and clear this
 unsigned char eventOverCurrent = 0;
@@ -108,9 +107,7 @@ volatile unsigned char rxEnd = 0;
 // incremented each time the timer overflows (skips multiples of 32)
 volatile unsigned char timerOverflow = 1;
 
-#define CELL_ID_LOW_ADDR		0x140
-#define CELL_ID_HIGH_ADDR		CELL_ID_LOW_ADDR + 1
-#define I_SHUNT_ADDR			CELL_ID_HIGH_ADDR + 1
+#define I_SHUNT_ADDR			0x140
 #define V_CELL_ADDR			I_SHUNT_ADDR + 2
 #define V_SHUNT_ADDR			V_CELL_ADDR + 2
 #define TEMPERATURE_ADDR		V_SHUNT_ADDR + 2
@@ -126,8 +123,6 @@ volatile unsigned char timerOverflow = 1;
 volatile unsigned char command;
 unsigned short rxCRC;
 
-volatile unsigned char at (CELL_ID_LOW_ADDR) cellIdLow;
-volatile unsigned char at (CELL_ID_HIGH_ADDR) cellIdHigh;
 volatile unsigned short at (I_SHUNT_ADDR) iShunt;
 volatile unsigned short at (V_CELL_ADDR) vCell;
 volatile unsigned short at (V_SHUNT_ADDR) vShunt;
@@ -164,7 +159,7 @@ void interruptHandler(void) {
 		if (softwareAddressing) {
 			switch (state) {
 				case STATE_WANT_CELL_ID_LOW :
-					if (rx == cellIdLow) {
+					if (rx == CELL_ID_LOW) {
 						rxCRC = crc_update(crc_init(), &rx, 1);
 						state = STATE_WANT_CELL_ID_HIGH;
 					} else {
@@ -172,7 +167,7 @@ void interruptHandler(void) {
 					}
 				break;
 				case STATE_WANT_CELL_ID_HIGH :
-					if (rx == cellIdHigh) {
+					if (rx == CELL_ID_HIGH) {
 						rxCRC = crc_update(rxCRC, &rx, 1);
 						state = STATE_WANT_SEQUENCE_NUMBER;
 					} else {
@@ -255,11 +250,6 @@ void main(void) {
 	TMR1IF = 0;			// clear interrupt flag
 	TMR1IE = 1;			// enable interrupt
 	TMR1ON = 1;			// turn it on
-
-#ifdef CELL_ID
-	writeCellID(CELL_ID);
-#endif
-	initCellMagic();
 
 	red(150);
 	green(150);
@@ -393,7 +383,6 @@ unsigned short getVShunt(unsigned short vCell) {
 	return vCell * shunt / 1024 / 1000l;
 }
 
-
 unsigned short getIShunt() {
 	unsigned long result = adc(BIN(11011101));
 	// TODO derive this equation!
@@ -468,11 +457,18 @@ void setGainPot(unsigned char c) {
 }
 
 void txBinStatus() {
-	unsigned char *buf = (unsigned char *) &cellIdLow;
+	unsigned char *buf = (unsigned char *) &iShunt;
 	short crc = crc_init();
-	int i;
+	unsigned char i;
 
-	for (i = 0; i < EVD5_STATUS_LENGTH - 2; i++) {
+	tx(CELL_ID_LOW);
+	i = CELL_ID_LOW;
+	crc = crc_update(crc, &i, 1);
+	tx(CELL_ID_HIGH);
+	i = CELL_ID_HIGH;
+	crc = crc_update(crc, &i, 1);
+
+	for (i = 0; i < EVD5_STATUS_LENGTH - 4; i++) {
 		tx(*buf);
 		crc = crc_update(crc, buf, 1);
 		buf++;
@@ -542,11 +538,6 @@ void setIShunt(unsigned short targetShuntCurrent) {
 #endif
 }
 
-void initCellMagic() {
-	cellIdLow = readEEPROM(EEPROM_CELL_ID_ADDRESS);
-	cellIdHigh = readEEPROM(EEPROM_CELL_ID_ADDRESS + 1);
-}
-
 void restoreLed() {
 	if (minCurrent) {
 		setRed();
@@ -554,17 +545,6 @@ void restoreLed() {
 		setGreen();
 	}
 }
-
-#ifdef CELL_ID
-void writeCellID(unsigned short cellID) {
-	sleep(100);
-	// SDCC is little endian, so write low byte first
-	writeEEPROM(EEPROM_CELL_ID_ADDRESS, (unsigned char) cellID & 0x00FF);
-	sleep(100);
-	writeEEPROM(EEPROM_CELL_ID_ADDRESS + 1, (unsigned char) ((cellID & 0xFF00) >> 8));
-	sleep(100);
-}
-#endif
 
 #ifdef MAP_CURRENT_MATRIX
 void mapCurrentMatrix() {

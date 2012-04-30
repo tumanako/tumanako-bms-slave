@@ -82,9 +82,9 @@ if cellId == None or kelvinConnection == None or resistorShunt == None:
 
 	writeData(cellId, kelvinConnection, resistorShunt)
 
-extra = ""
+extra = "-DCELL_ID_LOW=" + str(cellId & 0xff) + " -DCELL_ID_HIGH=" + str(cellId >> 8)
 if resistorShunt:
-	extra = extra + "-DRESISTOR_SHUNT=1"
+	extra = extra + " -DRESISTOR_SHUNT=1"
 makeEnv = os.environ.copy()
 makeEnv["EXTRA"] = extra
 make = Popen(["make", "clean", "all"], env=makeEnv)
