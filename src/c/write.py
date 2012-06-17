@@ -58,9 +58,9 @@ def writeData(cellId, kelvinConnection, resistorShunt):
 	output = check_output(["pk2cmd", "-PPIC16F688", "-GE10-17", "-R"])
 	if cellId != getCellId(output):
 		raise ValueError("expected cell id " + cellId + " but got " + getCellId(output) + " " + output)
-	if kelvinConnection != getKelvinConnection(output):
+	if kelvinConnection != booleanToString(getKelvinConnection(output)):
 		raise ValueError("expected kelvin connection " + kelvinConnection + " but got " + str(getKelvinConnection(output)) + " " + output)
-	if resistorShunt != getResistorShunt(output):
+	if resistorShunt != booleanToString(getResistorShunt(output)):
 		raise ValueError("expected resistor shunt " + resistorShunt + " but got " + str(resistorShunt(output)) + " " + output)
 
 output = check_output(["pk2cmd", "-PPIC16F688", "-GE10-17", "-R"])
