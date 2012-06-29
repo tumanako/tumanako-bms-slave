@@ -1,5 +1,6 @@
 #! /usr/bin/python
 import os
+import sys
 
 from subprocess import Popen
 from subprocess import check_output
@@ -68,18 +69,28 @@ cellId = getCellId(output)
 kelvinConnection = getKelvinConnection(output)
 resistorShunt = getResistorShunt(output)
 
-print "cellId:", cellId, "kelvin connection:", kelvinConnection, "resistorShunt", resistorShunt 
+print "found cellId:", cellId, "kelvin connection:", kelvinConnection, "resistorShunt", resistorShunt 
 
-if cellId == None or kelvinConnection == None or resistorShunt == None:
-	if cellId == None:
-		raise ValueError
+updateEEData = False
+
+if (len(sys.argv) > 1):
+	if (sys.argv[1] != cellId):
+		updateEEData = True
+		cellId = int(sys.argv[1])
+
+if cellId == None:
+	raise ValueError
 	
-	if kelvinConnection == None:
-		kelvinConnection = False
+if kelvinConnection == None:
+	kelvinConnection = False
+	updateEEData = True
 
-	if resistorShunt == None:
-		resistorShunt = True
+if resistorShunt == None:
+	resistorShunt = True
+	updateEEData = True
 
+if (updateEEData):	
+	print "writing cellId:", cellId, "kelvin connection:", kelvinConnection, "resistorShunt", resistorShunt 
 	writeData(cellId, kelvinConnection, resistorShunt)
 
 extra = "-DCELL_ID_LOW=" + str(cellId & 0xff) + " -DCELL_ID_HIGH=" + str(cellId >> 8)
