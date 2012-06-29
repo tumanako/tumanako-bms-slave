@@ -139,8 +139,52 @@ volatile unsigned char at (AUTOMATIC_ADDR) automatic = 1;
 
 volatile unsigned char state = STATE_WANT_CELL_ID_HIGH;
 
+// SDCC's pic14 port does not save the "stack" so we have to save it.
+// Currently we are only saving the first 7 bytes because that's all we use
+// TODO extract this into header and assembly files.
+unsigned char at (0x139) stackSave[7];
+
 #ifdef SDCC
 void interruptHandler(void) __interrupt 0 {
+	// SDCC's pic14 port does not save the "stack" so we have to save it.
+	// Currently we are only saving the first 7 bytes because that's all we use
+	// TODO extract this into header and assembly files.
+	_asm
+		BANKSEL	STK00
+		MOVF    STK00,W
+		BANKSEL	_stackSave
+		MOVWF	_stackSave
+
+		BANKSEL	STK01
+		MOVF    STK01,W
+		BANKSEL	(_stackSave + 1)
+		MOVWF	(_stackSave + 1)
+
+		BANKSEL	STK02
+		MOVF    STK02,W
+		BANKSEL	(_stackSave + 2)
+		MOVWF	(_stackSave + 2)
+
+		BANKSEL	STK03
+		MOVF    STK03,W
+		BANKSEL	(_stackSave + 3)
+		MOVWF	(_stackSave + 3)
+
+		BANKSEL	STK04
+		MOVF    STK04,W
+		BANKSEL	(_stackSave + 4)
+		MOVWF	(_stackSave + 4)
+
+		BANKSEL	STK05
+		MOVF    STK05,W
+		BANKSEL	(_stackSave + 5)
+		MOVWF	(_stackSave + 5)
+
+		BANKSEL	STK06
+		MOVF    STK06,W
+		BANKSEL	(_stackSave + 6)
+		MOVWF	(_stackSave + 6)
+	_endasm;
 #else
 void interruptHandler(void) {
 #endif
@@ -208,6 +252,46 @@ void interruptHandler(void) {
 			executeCommand(rx);
 		}
 	}
+#ifdef SDCC
+	// restore stack, see beginning of interrupt for saving
+	// TODO extract this into header and assembly files.
+	_asm
+		BANKSEL	(_stackSave + 0)
+		MOVF	(_stackSave + 0),W
+		BANKSEL	STK00
+		MOVWF	STK00
+
+		BANKSEL	(_stackSave + 1)
+		MOVF	(_stackSave + 1),W
+		BANKSEL	STK01
+		MOVWF	STK01
+
+		BANKSEL	(_stackSave + 2)
+		MOVF	(_stackSave + 2),W
+		BANKSEL	STK02
+		MOVWF	STK02
+
+		BANKSEL	(_stackSave + 3)
+		MOVF	(_stackSave + 3),W
+		BANKSEL	STK03
+		MOVWF	STK03
+
+		BANKSEL	(_stackSave + 4)
+		MOVF	(_stackSave + 4),W
+		BANKSEL	STK04
+		MOVWF	STK04
+
+		BANKSEL	(_stackSave + 5)
+		MOVF	(_stackSave + 5),W
+		BANKSEL	STK05
+		MOVWF	STK05
+
+		BANKSEL	(_stackSave + 6)
+		MOVF	(_stackSave + 6),W
+		BANKSEL	STK06
+		MOVWF	STK06
+	_endasm;
+#endif
 }
 
 void main(void) {
