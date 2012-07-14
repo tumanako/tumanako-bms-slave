@@ -105,7 +105,19 @@ if resistorShunt == None:
 print "writing cellId:", cellId, "kelvin connection:", kelvinConnection, "resistorShunt", resistorShunt 
 writeData(cellId, kelvinConnection, resistorShunt)
 
-extra = "-DCELL_ID_LOW=" + str(cellId & 0xff) + " -DCELL_ID_HIGH=" + str(cellId >> 8)
+revision = getRevision()
+isClean = getIsClean()
+programDate = long(time.time());
+
+extra = "-DCELL_ID_LOW=" + str(cellId & 0xff)
+extra = extra + " -DCELL_ID_HIGH=" + str(cellId >> 8)
+extra = extra + " -DREVISION_LOW=" + str(revision & 0xff)
+extra = extra + " -DREVISION_HIGH=" + str(revision >> 8)
+extra = extra + " -DIS_CLEAN=" + str(int(isClean))
+extra = extra + " -DPROGRAM_DATE_0=" + str(programDate >> 0 & 0xff)
+extra = extra + " -DPROGRAM_DATE_1=" + str(programDate >> 8 & 0xff)
+extra = extra + " -DPROGRAM_DATE_2=" + str(programDate >> 16 & 0xff)
+extra = extra + " -DPROGRAM_DATE_3=" + str(programDate >> 24 & 0xff)
 if resistorShunt:
 	extra = extra + " -DRESISTOR_SHUNT=1"
 makeEnv = os.environ.copy()
