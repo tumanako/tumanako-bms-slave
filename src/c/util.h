@@ -28,6 +28,7 @@
 void tx(unsigned char c);
 void txByte(unsigned char b);
 void txShort(unsigned short i);
+short txCrc(char c, short crc);
 
 unsigned short sabs(short s);
 void sleep(unsigned char time);

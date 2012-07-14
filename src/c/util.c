@@ -24,6 +24,7 @@
 #define __16f688
 #include "pic/pic16f688.h"
 #include "util.h"
+#include "crc.h"
 
 void tx(unsigned char c) {
 	while (TXIF == 0) {
@@ -52,6 +53,11 @@ void txByte(unsigned char b) {
 	tx(0x30 + hundreds);
 	tx(0x30 + tens);
 	tx(0x30 + ones);
+}
+
+short txCrc(char c, short crc) {
+	tx(c);
+	return crc_update(crc, &c, 1);
 }
 
 unsigned short sabs(short s) {

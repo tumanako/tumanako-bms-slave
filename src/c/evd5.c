@@ -30,9 +30,21 @@
 //#define MAP_CURRENT_MATRIX
 //#define RESISTOR_SHUNT
 
+#define PROTOCOL_VERSION 1
+
 #ifndef CELL_ID_LOW
 #define CELL_ID_LOW 0
 #define CELL_ID_HIGH 0
+
+#define REVISION_LOW 0
+#define REVISION_HIGH 0
+
+#define IS_CLEAN 0
+
+#define PROGRAM_DATE_0 0
+#define PROGRAM_DATE_1 0
+#define PROGRAM_DATE_2 0
+#define PROGRAM_DATE_3 0
 #endif
 
 #define FULL_VOLTAGE 3600
@@ -84,6 +96,7 @@ unsigned short getVCell();
 unsigned short getVShunt(unsigned short vCell);
 
 void txBinStatus();
+void txVersion();
 
 void vddOn();
 void vddOff();
@@ -418,6 +431,9 @@ void executeCommand(unsigned char rx) {
 		case '/' :
 			txBinStatus();
 			break;
+		case '?' :
+			txVersion();
+			break;
 		case 'x' :
 			halt();
 			break;
@@ -557,6 +573,21 @@ void txBinStatus() {
 		crc = crc_update(crc, buf, 1);
 		buf++;
 	}
+	crc = crc_finalize(crc);
+	tx(crc);
+	tx(crc >> 8);
+}
+
+void txVersion() {
+	short crc = crc_init();
+	crc = txCrc(PROTOCOL_VERSION, crc);
+	crc = txCrc(REVISION_LOW, crc);
+	crc = txCrc(REVISION_HIGH, crc);
+	crc = txCrc(IS_CLEAN, crc);
+	crc = txCrc(PROGRAM_DATE_0, crc);
+	crc = txCrc(PROGRAM_DATE_1, crc);
+	crc = txCrc(PROGRAM_DATE_2, crc);
+	crc = txCrc(PROGRAM_DATE_3, crc);
 	crc = crc_finalize(crc);
 	tx(crc);
 	tx(crc >> 8);
