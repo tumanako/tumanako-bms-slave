@@ -9,10 +9,19 @@ from subprocess import check_output
 from subprocess import check_call
 
 class Cell:
+	def __init__(self):
+		self.configVersion = 0xff
+		self.cellId = None
+		self.kelvinConnection = None
+		self.resistorShunt = None
+		self.revision = None
+		self.isClean = None
+		self.whenProgrammed = None
+
 	def read(self):
 		data = readData(15, 12)
 		if data[0] == 0xff:
-			self.configVersion = 0
+			self.configVersion = 0xff
 		else:
 			raise ValueError("unknown config verison in " + str(data))
 		self.cellId = data[1] + data[2] * 256
@@ -28,8 +37,8 @@ class Cell:
 		self.whenProgrammed = self.whenProgrammed * 256 + data[8]
 	
 	def write(self):
-		data = struct.pack("<HBBHBL", self.cellId, self.kelvinConnection, self.resistorShunt, self.revision, self.isClean, self.whenProgrammed)
-		writeData(16, data)
+		data = struct.pack("<BHBBHBL", self.configVersion, self.cellId, self.kelvinConnection, self.resistorShunt, self.revision, self.isClean, self.whenProgrammed)
+		writeData(15, data)
 
 		newConfig = Cell()
 		newConfig.read()
@@ -58,8 +67,7 @@ def getIsClean():
 	return True
 	
 def makeEEDataHex(address, data):
-	# TODO use the address
-	h = ":%02x422000" % (len(data) * 2)
+	h = ":%02x%04x00" % (len(data) * 2, 0x4200 + address * 2)
 	for b in data:
 		h = h + b.encode("hex") + "00"
 	h = h + "00\n"
