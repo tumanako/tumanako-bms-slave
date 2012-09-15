@@ -11,6 +11,10 @@ from subprocess import check_call
 class Cell:
 	def read(self):
 		data = readData(15, 12)
+		if data[0] == 0xff:
+			self.configVersion = 0
+		else:
+			raise ValueError("unknown config verison in " + str(data))
 		self.cellId = data[1] + data[2] * 256
 		if self.cellId == 0xffff:
 			self.cellId
@@ -30,14 +34,14 @@ class Cell:
 		newConfig = Cell()
 		newConfig.read()
 		if self.cellId != newConfig.cellId:
-			raise ValueError("expected cell id " + self(self.cellId) + " but got " + str(newConfig))
+			raise ValueError("expected cell id " + str(self.cellId) + " but got " + str(newConfig))
 		if self.kelvinConnection != newConfig.kelvinConnection:
 			raise ValueError("expected kelvin connection " + str(self.kelvinConnection) + " but got " + str(newConfig))
 		if self.resistorShunt != newConfig.resistorShunt:
 			raise ValueError("expected resistor shunt " + str(self.resistorShunt) + " but got " + str(newConfig))
 
 	def __str__(self):
-		return "cellId: " + str(self.cellId) + " kelvin: " + str(self.kelvinConnection) + " resistorShunt: " + str(self.resistorShunt) + " r" + str(self.revision) + " isClean: " + str(self.isClean) + " whenProgrammed: " + str(self.whenProgrammed)
+		return "configVersion: " + str(self.configVersion) + " cellId: " + str(self.cellId) + " kelvin: " + str(self.kelvinConnection) + " resistorShunt: " + str(self.resistorShunt) + " r" + str(self.revision) + " isClean: " + str(self.isClean) + " whenProgrammed: " + str(self.whenProgrammed)
 
 def getRevision():
 	client = pysvn.Client()
