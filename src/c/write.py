@@ -8,36 +8,17 @@ from subprocess import Popen
 from subprocess import check_output
 from subprocess import check_call
 
-def getEEData(output, addresses):
-	for l in output.splitlines():
-		if l.startswith("0010"):
-			words = l.split(" ")
-			result = []
-			for address in addresses:
-				result.append(words[address])
-			return result
-	raise ValueError(output)
+class Cell:
+	def __init__(self):
+		data = readData(15, 12)
+		self.cellId = data[1] + data[2] * 16
+		if self.cellId == 0xffff:
+			self.cellId
+		self.kelvinConnection = data[3] == 1
+		self.resistorShunt = data[4] == 1
 	
-def getCellId(output):
-	data = getEEData(output, [3, 1])
-	cellId = int(data[0] + data[1], 16)
-	if cellId == 0xffff:
-		return None
-	return cellId
-
-def getKelvinConnection(output):
-	return getBoolean(output, 5)
-
-def getResistorShunt(output):
-	return getBoolean(output, 7)
-
-def getBoolean(output, address):
-	value = getEEData(output, [address])
-	if value[0] == "00":
-		return False
-	if value[0] == "01":
-		return True
-	return None
+	def __str__(self):
+		return "cellId: " + str(self.cellId) + " kelvin connection: " + str(self.kelvinConnection) + " resistorShunt " + str(self.resistorShunt)
 
 def getRevision():
 	client = pysvn.Client()
@@ -74,33 +55,52 @@ def writeData(cellId, kelvinConnection, resistorShunt):
 	eedata.close()
 	print check_output(["pk2cmd", "-PPIC16F688", "-M", "-Feedata.hex", "-R"])
 	
-	output = check_output(["pk2cmd", "-PPIC16F688", "-GE10-17", "-R"])
-	if cellId != getCellId(output):
-		raise ValueError("expected cell id " + cellId + " but got " + getCellId(output) + " " + output)
-	if kelvinConnection != getKelvinConnection(output):
-		raise ValueError("expected kelvin connection " + kelvinConnection + " but got " + str(getKelvinConnection(output)) + " " + output)
-	if resistorShunt != getResistorShunt(output):
-		raise ValueError("expected resistor shunt " + resistorShunt + " but got " + str(resistorShunt(output)) + " " + output)
+	newConfig = Cell()
+	if cellId != newConfig.cellId:
+		raise ValueError("expected cell id " + cellId + " but got " + newConfig)
+	if kelvinConnection != newConfig.kelvinConnection:
+		raise ValueError("expected kelvin connection " + kelvinConnection + " but got " + newConfig)
+	if resistorShunt == newConfig.resistorShunt:
+		raise ValueError("expected resistor shunt " + str(resistorShunt) + " but got " + str(newConfig))
 
-output = check_output(["pk2cmd", "-PPIC16F688", "-GE10-17", "-R"])
-cellId = getCellId(output)
-kelvinConnection = getKelvinConnection(output)
-resistorShunt = getResistorShunt(output)
-
-print "found cellId:", cellId, "kelvin connection:", kelvinConnection, "resistorShunt", resistorShunt 
+def readData(address, length):
+	# we read 64 bytes and then return the data requested
+	if (length + address > 64):
+		raise ValueError("cannot read mroe than 64 bytes")
+	output = check_output(["pk2cmd", "-PPIC16F688", "-GE00-3f", "-R"])
+	lines = output.splitlines()
+	if not lines[0].strip().endswith("Read successfully."):
+		raise ValueError("'" + lines[0] + "'\n" + output)
+	data = []
+	for line in lines[3:11]:
+		# 0010 4B  00  00  01  CB  01  00  14
+		lineData = line.strip().replace("  ", " ").split(" ")
+		if len(lineData) != 9:
+			raise ValueError("Expected 9 values in " + lineData)
+		for value in lineData[1:9]:
+			data.append(int(value, 16))
+	return data[address:address + length]	
+	
+initialConfig = Cell();
+print "found ", initialConfig
 
 if (len(sys.argv) > 1):
-	if (sys.argv[1] != cellId):
-		cellId = int(sys.argv[1])
+	cellId = int(sys.argv[1])
+else:
+	cellId = initialConfig.cellId
 
 if cellId == None:
 	raise ValueError
 	
-if kelvinConnection == None:
+if initialConfig.kelvinConnection == None:
 	kelvinConnection = False
+else:
+	kelvinConnection = initialConfig.kelvinConnection
 
-if resistorShunt == None:
+if initialConfig.resistorShunt == None:
 	resistorShunt = True
+else:
+	resistorShunt = initialConfig.resistorShunt
 
 print "writing cellId:", cellId, "kelvin connection:", kelvinConnection, "resistorShunt", resistorShunt 
 writeData(cellId, kelvinConnection, resistorShunt)
