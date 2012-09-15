@@ -14,30 +14,54 @@ class Cell:
 		self.cellId = None
 		self.kelvinConnection = None
 		self.resistorShunt = None
+		self.hardSwitchedShunt = None
 		self.revision = None
 		self.isClean = None
 		self.whenProgrammed = None
 
 	def read(self):
-		data = readData(15, 12)
+		data = readData(15, 13)
 		if data[0] == 0xff:
-			self.configVersion = 0xff
+			self.read_ff(data)
+		elif data[0] == 0x1:
+			self.read_1(data)
 		else:
 			raise ValueError("unknown config verison in " + str(data))
+
+	def read_ff(self, data):
+		self.configVersion = 0xff
 		self.cellId = data[1] + data[2] * 256
 		if self.cellId == 0xffff:
-			self.cellId
+			self.cellId = None
 		self.kelvinConnection = data[3] == 1
 		self.resistorShunt = data[4] == 1
+		self.hardSwitchedShunt = False
 		self.revision = data[5] + data[6] * 256
 		self.isClean = data[7] == 1
 		self.whenProgrammed = data[11]
 		self.whenProgrammed = self.whenProgrammed * 256 + data[10]
 		self.whenProgrammed = self.whenProgrammed * 256 + data[9]
 		self.whenProgrammed = self.whenProgrammed * 256 + data[8]
-	
+
+	def read_1(self, data):
+		print data
+		self.configVersion = 0x1
+		self.cellId = data[1] + data[2] * 256
+		if self.cellId == 0xffff:
+			self.cellId = None
+		self.kelvinConnection = data[3] == 1
+		self.resistorShunt = data[4] == 1
+		self.hardSwitchedShunt = data[5] == 1
+		self.revision = data[6] + data[7] * 256
+		self.isClean = data[8] == 1
+		self.whenProgrammed = data[12]
+		self.whenProgrammed = self.whenProgrammed * 256 + data[11]
+		self.whenProgrammed = self.whenProgrammed * 256 + data[10]
+		self.whenProgrammed = self.whenProgrammed * 256 + data[9]
+
 	def write(self):
-		data = struct.pack("<BHBBHBL", self.configVersion, self.cellId, self.kelvinConnection, self.resistorShunt, self.revision, self.isClean, self.whenProgrammed)
+		self.configVersion = 0x1
+		data = struct.pack("<BHBBBHBL", self.configVersion, self.cellId, self.kelvinConnection, self.resistorShunt, self.hardSwitchedShunt, self.revision, self.isClean, self.whenProgrammed)
 		writeData(15, data)
 
 		newConfig = Cell()
@@ -50,7 +74,7 @@ class Cell:
 			raise ValueError("expected resistor shunt " + str(self.resistorShunt) + " but got " + str(newConfig))
 
 	def __str__(self):
-		return "configVersion: " + str(self.configVersion) + " cellId: " + str(self.cellId) + " kelvin: " + str(self.kelvinConnection) + " resistorShunt: " + str(self.resistorShunt) + " r" + str(self.revision) + " isClean: " + str(self.isClean) + " whenProgrammed: " + str(self.whenProgrammed)
+		return "configVersion: " + str(self.configVersion) + " cellId: " + str(self.cellId) + " kelvin: " + str(self.kelvinConnection) + " resistorShunt: " + str(self.resistorShunt) + " hardSwitchedShunt: " + str(self.hardSwitchedShunt) + " r" + str(self.revision) + " isClean: " + str(self.isClean) + " whenProgrammed: " + str(self.whenProgrammed)
 
 def getRevision():
 	client = pysvn.Client()
@@ -112,6 +136,8 @@ if config.kelvinConnection == None:
 	config.kelvinConnection = False
 if config.resistorShunt == None:
 	config.resistorShunt = True
+if config.hardSwitchedShunt == None:
+	config.hardSwitchedShunt = False
 
 config.revision = getRevision()
 config.isClean = getIsClean()
@@ -131,6 +157,8 @@ extra = extra + " -DPROGRAM_DATE_2=" + str(config.whenProgrammed >> 16 & 0xff)
 extra = extra + " -DPROGRAM_DATE_3=" + str(config.whenProgrammed >> 24 & 0xff)
 if config.resistorShunt:
 	extra = extra + " -DRESISTOR_SHUNT=1"
+if config.hardSwitchedShunt:
+	extra = extra + " -DHARD_SWITCHED_SHUNT=1"
 makeEnv = os.environ.copy()
 makeEnv["EXTRA"] = extra
 make = Popen(["make", "clean", "all"], env=makeEnv)
