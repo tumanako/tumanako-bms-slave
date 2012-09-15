@@ -9,16 +9,35 @@ from subprocess import check_output
 from subprocess import check_call
 
 class Cell:
-	def __init__(self):
+	def read(self):
 		data = readData(15, 12)
-		self.cellId = data[1] + data[2] * 16
+		self.cellId = data[1] + data[2] * 256
 		if self.cellId == 0xffff:
 			self.cellId
 		self.kelvinConnection = data[3] == 1
 		self.resistorShunt = data[4] == 1
+		self.revision = data[5] + data[6] * 256
+		self.isClean = data[7] == 1
+		self.whenProgrammed = data[11]
+		self.whenProgrammed = self.whenProgrammed * 256 + data[10]
+		self.whenProgrammed = self.whenProgrammed * 256 + data[9]
+		self.whenProgrammed = self.whenProgrammed * 256 + data[8]
 	
+	def write(self):
+		data = struct.pack("<HBBHBL", self.cellId, self.kelvinConnection, self.resistorShunt, self.revision, self.isClean, self.whenProgrammed)
+		writeData(16, data)
+
+		newConfig = Cell()
+		newConfig.read()
+		if self.cellId != newConfig.cellId:
+			raise ValueError("expected cell id " + self(self.cellId) + " but got " + str(newConfig))
+		if self.kelvinConnection != newConfig.kelvinConnection:
+			raise ValueError("expected kelvin connection " + str(self.kelvinConnection) + " but got " + str(newConfig))
+		if self.resistorShunt != newConfig.resistorShunt:
+			raise ValueError("expected resistor shunt " + str(self.resistorShunt) + " but got " + str(newConfig))
+
 	def __str__(self):
-		return "cellId: " + str(self.cellId) + " kelvin connection: " + str(self.kelvinConnection) + " resistorShunt " + str(self.resistorShunt)
+		return "cellId: " + str(self.cellId) + " kelvin: " + str(self.kelvinConnection) + " resistorShunt: " + str(self.resistorShunt) + " r" + str(self.revision) + " isClean: " + str(self.isClean) + " whenProgrammed: " + str(self.whenProgrammed)
 
 def getRevision():
 	client = pysvn.Client()
@@ -43,26 +62,13 @@ def makeEEDataHex(address, data):
 	h = h + ":00000001FF"
 	return h
 
-def writeData(cellId, kelvinConnection, resistorShunt):
-	revision = getRevision()
-	isClean = getIsClean()
-	print "about to write", cellId, kelvinConnection, resistorShunt, revision, isClean
-	
-	data = struct.pack("<HBBHBL", cellId, kelvinConnection, resistorShunt, revision, isClean, long(time.time()))
-	
+def writeData(address, data):
+	print "about to write", len(data), "bytes to", address
 	eedata = open("eedata.hex", "w")
-	eedata.write(makeEEDataHex(10, data))
+	eedata.write(makeEEDataHex(address, data))
 	eedata.close()
 	print check_output(["pk2cmd", "-PPIC16F688", "-M", "-Feedata.hex", "-R"])
 	
-	newConfig = Cell()
-	if cellId != newConfig.cellId:
-		raise ValueError("expected cell id " + cellId + " but got " + newConfig)
-	if kelvinConnection != newConfig.kelvinConnection:
-		raise ValueError("expected kelvin connection " + kelvinConnection + " but got " + newConfig)
-	if resistorShunt == newConfig.resistorShunt:
-		raise ValueError("expected resistor shunt " + str(resistorShunt) + " but got " + str(newConfig))
-
 def readData(address, length):
 	# we read 64 bytes and then return the data requested
 	if (length + address > 64):
@@ -81,44 +87,37 @@ def readData(address, length):
 			data.append(int(value, 16))
 	return data[address:address + length]	
 	
-initialConfig = Cell();
-print "found ", initialConfig
+config = Cell()
+config.read()
+print "found  ", config
 
 if (len(sys.argv) > 1):
-	cellId = int(sys.argv[1])
-else:
-	cellId = initialConfig.cellId
+	config.cellId = int(sys.argv[1])
 
-if cellId == None:
+if config.cellId == None:
 	raise ValueError
-	
-if initialConfig.kelvinConnection == None:
-	kelvinConnection = False
-else:
-	kelvinConnection = initialConfig.kelvinConnection
+if config.kelvinConnection == None:
+	config.kelvinConnection = False
+if config.resistorShunt == None:
+	config.resistorShunt = True
 
-if initialConfig.resistorShunt == None:
-	resistorShunt = True
-else:
-	resistorShunt = initialConfig.resistorShunt
+config.revision = getRevision()
+config.isClean = getIsClean()
+config.whenProgrammed = long(time.time());
 
-print "writing cellId:", cellId, "kelvin connection:", kelvinConnection, "resistorShunt", resistorShunt 
-writeData(cellId, kelvinConnection, resistorShunt)
+print "writing", str(config)
+config.write()
 
-revision = getRevision()
-isClean = getIsClean()
-programDate = long(time.time());
-
-extra = "-DCELL_ID_LOW=" + str(cellId & 0xff)
-extra = extra + " -DCELL_ID_HIGH=" + str(cellId >> 8)
-extra = extra + " -DREVISION_LOW=" + str(revision & 0xff)
-extra = extra + " -DREVISION_HIGH=" + str(revision >> 8)
-extra = extra + " -DIS_CLEAN=" + str(int(isClean))
-extra = extra + " -DPROGRAM_DATE_0=" + str(programDate >> 0 & 0xff)
-extra = extra + " -DPROGRAM_DATE_1=" + str(programDate >> 8 & 0xff)
-extra = extra + " -DPROGRAM_DATE_2=" + str(programDate >> 16 & 0xff)
-extra = extra + " -DPROGRAM_DATE_3=" + str(programDate >> 24 & 0xff)
-if resistorShunt:
+extra = "-DCELL_ID_LOW=" + str(config.cellId & 0xff)
+extra = extra + " -DCELL_ID_HIGH=" + str(config.cellId >> 8)
+extra = extra + " -DREVISION_LOW=" + str(config.revision & 0xff)
+extra = extra + " -DREVISION_HIGH=" + str(config.revision >> 8)
+extra = extra + " -DIS_CLEAN=" + str(int(config.isClean))
+extra = extra + " -DPROGRAM_DATE_0=" + str(config.whenProgrammed >> 0 & 0xff)
+extra = extra + " -DPROGRAM_DATE_1=" + str(config.whenProgrammed >> 8 & 0xff)
+extra = extra + " -DPROGRAM_DATE_2=" + str(config.whenProgrammed >> 16 & 0xff)
+extra = extra + " -DPROGRAM_DATE_3=" + str(config.whenProgrammed >> 24 & 0xff)
+if config.resistorShunt:
 	extra = extra + " -DRESISTOR_SHUNT=1"
 makeEnv = os.environ.copy()
 makeEnv["EXTRA"] = extra
