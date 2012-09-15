@@ -33,27 +33,26 @@ class Cell:
 		self.cellId = data[1] + data[2] * 256
 		if self.cellId == 0xffff:
 			self.cellId = None
-		self.kelvinConnection = data[3] == 1
-		self.resistorShunt = data[4] == 1
+		self.kelvinConnection = decodeBoolean(data[3] == 1)
+		self.resistorShunt = decodeBoolean(data[4])
 		self.hardSwitchedShunt = False
 		self.revision = data[5] + data[6] * 256
-		self.isClean = data[7] == 1
+		self.isClean = decodeBoolean(data[7] == 1)
 		self.whenProgrammed = data[11]
 		self.whenProgrammed = self.whenProgrammed * 256 + data[10]
 		self.whenProgrammed = self.whenProgrammed * 256 + data[9]
 		self.whenProgrammed = self.whenProgrammed * 256 + data[8]
 
 	def read_1(self, data):
-		print data
 		self.configVersion = 0x1
 		self.cellId = data[1] + data[2] * 256
 		if self.cellId == 0xffff:
 			self.cellId = None
-		self.kelvinConnection = data[3] == 1
-		self.resistorShunt = data[4] == 1
-		self.hardSwitchedShunt = data[5] == 1
+		self.kelvinConnection = decodeBoolean(data[3])
+		self.resistorShunt = decodeBoolean(data[4])
+		self.hardSwitchedShunt = decodeBoolean(data[5])
 		self.revision = data[6] + data[7] * 256
-		self.isClean = data[8] == 1
+		self.isClean = decodeBoolean(data[8])
 		self.whenProgrammed = data[12]
 		self.whenProgrammed = self.whenProgrammed * 256 + data[11]
 		self.whenProgrammed = self.whenProgrammed * 256 + data[10]
@@ -75,6 +74,14 @@ class Cell:
 
 	def __str__(self):
 		return "configVersion: " + str(self.configVersion) + " cellId: " + str(self.cellId) + " kelvin: " + str(self.kelvinConnection) + " resistorShunt: " + str(self.resistorShunt) + " hardSwitchedShunt: " + str(self.hardSwitchedShunt) + " r" + str(self.revision) + " isClean: " + str(self.isClean) + " whenProgrammed: " + str(self.whenProgrammed)
+
+def decodeBoolean(b):
+	if (b == 0):
+		return False
+	elif (b == 1):
+		return True
+	else:
+		return None
 
 def getRevision():
 	client = pysvn.Client()
