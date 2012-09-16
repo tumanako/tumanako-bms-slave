@@ -597,6 +597,7 @@ void halt() {
 	minCurrent = 0;
 	red(100);
 	green(100);
+	ledOff();
 	vddOff();
 	TMR1IE = 0;			// disable timer interrupt so it doesn't wake us up
 	WUE = 1;			// wake up if we receive something (recieve interrupt still enabled)
