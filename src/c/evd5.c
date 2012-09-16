@@ -29,6 +29,7 @@
 
 //#define MAP_CURRENT_MATRIX
 //#define RESISTOR_SHUNT
+//#define HARD_SWITCH_SHUNT
 
 #define PROTOCOL_VERSION 1
 
@@ -595,6 +596,7 @@ void txVersion() {
 
 void halt() {
 	minCurrent = 0;
+	setIShunt(0);
 	red(100);
 	green(100);
 	ledOff();
@@ -613,6 +615,13 @@ void halt() {
 }
 
 void setIShunt(unsigned short targetShuntCurrent) {
+#ifdef HARD_SWITCH_SHUNT
+	if (targetShuntCurrent == 0) {
+		RA0 = 0;
+	} else {
+		RA0 = 1;
+	}
+#else
 	short difference;
 	// if we want zero current, park pots at ..._POT_OFF position
 	if (targetShuntCurrent == 0 && (gainPot != GAIN_POT_OFF || vShuntPot != V_SHUNT_POT_OFF)) {
@@ -651,6 +660,7 @@ void setIShunt(unsigned short targetShuntCurrent) {
 		setVShuntPot(vShuntPot - 1);
 		green(2);
 	}
+#endif
 #endif
 }
 
