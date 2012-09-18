@@ -29,7 +29,7 @@
 
 //#define MAP_CURRENT_MATRIX
 //#define RESISTOR_SHUNT
-//#define HARD_SWITCH_SHUNT
+//#define HARD_SWITCHED_SHUNT
 
 #define PROTOCOL_VERSION 1
 
@@ -615,7 +615,7 @@ void halt() {
 }
 
 void setIShunt(unsigned short targetShuntCurrent) {
-#ifdef HARD_SWITCH_SHUNT
+#ifdef HARD_SWITCHED_SHUNT
 	if (targetShuntCurrent == 0) {
 		RA0 = 0;
 	} else {
