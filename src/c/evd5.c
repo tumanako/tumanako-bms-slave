@@ -617,9 +617,9 @@ void halt() {
 void setIShunt(unsigned short targetShuntCurrent) {
 #ifdef HARD_SWITCHED_SHUNT
 	if (targetShuntCurrent == 0) {
-		RA0 = 0;
+		RA2 = 0;
 	} else {
-		RA0 = 1;
+		RA2 = 1;
 	}
 #else
 	short difference;
