@@ -137,6 +137,15 @@ print "found  ", config
 if (len(sys.argv) > 1):
 	config.cellId = int(sys.argv[1])
 
+if (len(sys.argv) > 2):
+	config.kelvinConnection = sys.argv[2] == "true"
+
+if (len(sys.argv) > 3):
+	config.resistorShunt = sys.argv[3] == "true"
+
+if (len(sys.argv) > 4):
+	config.hardSwitchedShunt = sys.argv[4] == "true"
+
 if config.cellId == None:
 	raise ValueError
 if config.kelvinConnection == None:
