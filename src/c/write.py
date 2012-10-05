@@ -7,6 +7,7 @@ import time
 from subprocess import Popen
 from subprocess import check_output
 from subprocess import check_call
+import argparse
 
 class Cell:
 	def __init__(self):
@@ -134,26 +135,33 @@ config = Cell()
 config.read()
 print "found  ", config
 
-if (len(sys.argv) > 1):
-	config.cellId = int(sys.argv[1])
+parser = argparse.ArgumentParser(description="evd5 programmer")
+parser.add_argument('--cellId', type=int)
+parser.add_argument('--kelvin', action='store_true')
+parser.add_argument('--resistorShunt', action='store_true')
+parser.add_argument('--hardSwitchedShunt', action='store_true')
+parser.add_argument('--noKelvin', action='store_false')
+parser.add_argument('--noResistorShunt', action='store_false')
+parser.add_argument('--noHardSwitchedShunt', action='store_false')
+args = parser.parse_args()
 
-if (len(sys.argv) > 2):
-	config.kelvinConnection = sys.argv[2] == "true"
-
-if (len(sys.argv) > 3):
-	config.resistorShunt = sys.argv[3] == "true"
-
-if (len(sys.argv) > 4):
-	config.hardSwitchedShunt = sys.argv[4] == "true"
+if args.cellId != None:
+	config.cellId = args.cellId
+if args.kelvin != None:
+	config.kelvinConnection = args.kelvin
+if args.resistorShunt != None:
+	config.resistorShunt = args.resistorShunt
+if args.hardSwitchedShunt != None:
+	config.hardSwitchedShunt = args.hardSwitchedShunt
 
 if config.cellId == None:
 	raise ValueError
 if config.kelvinConnection == None:
-	config.kelvinConnection = False
+	raise ValueError
 if config.resistorShunt == None:
-	config.resistorShunt = True
+	raise ValueError
 if config.hardSwitchedShunt == None:
-	config.hardSwitchedShunt = False
+	raise ValueError
 
 config.revision = getRevision()
 config.isClean = getIsClean()
