@@ -135,24 +135,23 @@ config = Cell()
 config.read()
 print "found  ", config
 
+
 parser = argparse.ArgumentParser(description="evd5 programmer")
 parser.add_argument('--cellId', type=int)
-parser.add_argument('--kelvin', action='store_true')
-parser.add_argument('--resistorShunt', action='store_true')
-parser.add_argument('--hardSwitchedShunt', action='store_true')
-parser.add_argument('--noKelvin', action='store_false')
-parser.add_argument('--noResistorShunt', action='store_false')
-parser.add_argument('--noHardSwitchedShunt', action='store_false')
+parser.add_argument('--kelvin')
+parser.add_argument('--resistorShunt')
+parser.add_argument('--hardSwitchedShunt')
 args = parser.parse_args()
+print "got args", args
 
 if args.cellId != None:
 	config.cellId = args.cellId
 if args.kelvin != None:
-	config.kelvinConnection = args.kelvin
+	config.kelvinConnection = args.kelvin == 'True'
 if args.resistorShunt != None:
-	config.resistorShunt = args.resistorShunt
+	config.resistorShunt = args.resistorShunt == 'True'
 if args.hardSwitchedShunt != None:
-	config.hardSwitchedShunt = args.hardSwitchedShunt
+	config.hardSwitchedShunt = args.hardSwitchedShunt == 'True'
 
 if config.cellId == None:
 	raise ValueError
