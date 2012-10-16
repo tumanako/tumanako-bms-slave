@@ -664,6 +664,8 @@ void restoreLed() {
 		setRed();
 	} else if (vCell > FULL_VOLTAGE) {
 		setGreen();
+	} else {
+		ledOff();
 	}
 }
 
