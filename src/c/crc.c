@@ -25,27 +25,22 @@
  * \param data_len Number of bytes in the \a data buffer.
  * \return         The updated crc value.
  *****************************************************************************/
-crc_t crc_update(crc_t crc, const unsigned char *d, size_t data_len)
+crc_t crc_update(crc_t crc, const unsigned char c)
 {
     unsigned int i;
-    int bit;
-    unsigned char c;
+	int bit;
 
-    while (data_len--) {
-        c = *d++;
-        for (i = 0x80; i > 0; i >>= 1) {
-            bit = crc & 0x8000;
-            if (c & i) {
-                bit = !bit;
-            }
-            crc <<= 1;
-            if (bit) {
-                crc ^= 0x1021;
-            }
-        }
-        crc &= 0xffff;
-    }
-    return crc & 0xffff;
+	for (i = 0x80; i > 0; i >>= 1) {
+		bit = crc & 0x8000;
+		if (c & i) {
+			bit = !bit;
+		}
+		crc <<= 1;
+		if (bit) {
+			crc ^= 0x1021;
+		}
+	}
+	return crc & 0xffff;
 }
 
 

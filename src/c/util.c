@@ -57,7 +57,7 @@ void txByte(unsigned char b) {
 
 short txCrc(char c, short crc) {
 	tx(c);
-	return crc_update(crc, &c, 1);
+	return crc_update(crc, c);
 }
 
 unsigned short sabs(short s) {

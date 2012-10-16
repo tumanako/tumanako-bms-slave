@@ -51,11 +51,10 @@ typedef unsigned int crc_t;
  * Update the crc value with new data.
  *
  * \param crc      The current crc value.
- * \param data     Pointer to a buffer of \a data_len bytes.
- * \param data_len Number of bytes in the \a data buffer.
+ * \param c        The data to add to the crc.
  * \return         The updated crc value.
  *****************************************************************************/
-crc_t crc_update(crc_t crc, const unsigned char *data, size_t data_len);
+crc_t crc_update(crc_t crc, const unsigned char c);
 
 /**
  * Calculate the final crc value.

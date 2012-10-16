@@ -218,7 +218,7 @@ void interruptHandler(void) {
 			switch (state) {
 				case STATE_WANT_CELL_ID_LOW :
 					if (rx == CELL_ID_LOW) {
-						rxCRC = crc_update(crc_init(), &rx, 1);
+						rxCRC = crc_update(crc_init(), rx);
 						state = STATE_WANT_CELL_ID_HIGH;
 					} else {
 						state = STATE_WANT_CELL_ID_LOW;
@@ -226,7 +226,7 @@ void interruptHandler(void) {
 				break;
 				case STATE_WANT_CELL_ID_HIGH :
 					if (rx == CELL_ID_HIGH) {
-						rxCRC = crc_update(rxCRC, &rx, 1);
+						rxCRC = crc_update(rxCRC, rx);
 						state = STATE_WANT_SEQUENCE_NUMBER;
 					} else {
 						state = STATE_WANT_CELL_ID_LOW;
@@ -235,11 +235,11 @@ void interruptHandler(void) {
 				case STATE_WANT_SEQUENCE_NUMBER :
 					state = STATE_WANT_COMMAND;
 					sequenceNumber = rx;
-					rxCRC = crc_update(rxCRC, &rx, 1);
+					rxCRC = crc_update(rxCRC, rx);
 					break;
 				case STATE_WANT_COMMAND :
 					state = STATE_WANT_CRC_LOW;
-					rxCRC = crc_update(rxCRC, &rx, 1);
+					rxCRC = crc_update(rxCRC, rx);
 					rxCRC = crc_finalize(rxCRC);
 					command = rx;
 					break;
