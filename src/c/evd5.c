@@ -562,16 +562,11 @@ void txBinStatus() {
 	short crc = crc_init();
 	unsigned char i;
 
-	tx(CELL_ID_LOW);
-	i = CELL_ID_LOW;
-	crc = crc_update(crc, &i, 1);
-	tx(CELL_ID_HIGH);
-	i = CELL_ID_HIGH;
-	crc = crc_update(crc, &i, 1);
+	crc = txCrc(CELL_ID_LOW, crc);
+	crc = txCrc(CELL_ID_HIGH, crc);
 
 	for (i = 0; i < EVD5_STATUS_LENGTH - 4; i++) {
-		tx(*buf);
-		crc = crc_update(crc, buf, 1);
+		crc = txCrc(*buf, crc);
 		buf++;
 	}
 	crc = crc_finalize(crc);
