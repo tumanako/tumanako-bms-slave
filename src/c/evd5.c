@@ -619,9 +619,13 @@ void setIShunt(unsigned short targetShuntCurrent) {
 #else
 	short difference;
 	// if we want zero current, park pots at ..._POT_OFF position
-	if (targetShuntCurrent == 0 && (gainPot != GAIN_POT_OFF || vShuntPot != V_SHUNT_POT_OFF)) {
-		setGainPot(GAIN_POT_OFF);
-		setVShuntPot(V_SHUNT_POT_OFF);
+	if (targetShuntCurrent == 0) {
+		if (gainPot != GAIN_POT_OFF) {
+			setGainPot(GAIN_POT_OFF);
+		}
+		if (vShuntPot != V_SHUNT_POT_OFF) {
+			setVShuntPot(V_SHUNT_POT_OFF);
+		}
 		return;
 	}
 #ifdef RESISTOR_SHUNT
