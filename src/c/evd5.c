@@ -492,6 +492,7 @@ unsigned short getIShunt() {
 
 void vddOn() {
 	RC0 = 0;	// turn on FET Qx02
+	sleep(10);  // give pots time to turn on
 	setGainPot(GAIN_POT_OFF);
 	setVShuntPot(V_SHUNT_POT_OFF);
 }
