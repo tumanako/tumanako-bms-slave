@@ -109,6 +109,7 @@ void mapCurrentMatrix();
 void setIShunt(unsigned short i);
 void setVShuntPot(unsigned char c);
 void setGainPot(unsigned char c);
+void setLedIndicator(unsigned char isOn);
 
 // the number of times we have seen overcurrent on the shunt
 // TODO provide interface to get and clear this
@@ -157,6 +158,9 @@ volatile unsigned char state = STATE_WANT_CELL_ID_HIGH;
 // Currently we are only saving the first 7 bytes because that's all we use
 // TODO extract this into header and assembly files.
 unsigned char at (0x139) stackSave[7];
+
+// whether we have turned on an indicator LED
+volatile unsigned char isLedIndicatorOn = 0;
 
 #ifdef SDCC
 void interruptHandler(void) __interrupt 0 {
@@ -358,11 +362,7 @@ void main(void) {
 		if (!isVddOn()) {
 			vddOn();
 		}
-		if (minCurrent) {
-			red(10);
-		} else {
-			green(10);
-		}
+		restoreLed();
 		{
 			unsigned short localIShunt = getIShunt();
 			unsigned short localTemperature = getTemperature();
@@ -399,6 +399,7 @@ void main(void) {
 }
 
 void executeCommand(unsigned char rx) {
+	setLedIndicator(1);
 	switch (rx) {
 		case 'p' :
 			vddOn();
@@ -463,7 +464,7 @@ void executeCommand(unsigned char rx) {
 			crlf();
 			break;
 	}
-	green(1);
+	setLedIndicator(0);
 }
 
 unsigned short getTemperature() {
@@ -658,20 +659,50 @@ void setIShunt(unsigned short targetShuntCurrent) {
 	} else {
 		// TODO reduce gain
 		setVShuntPot(vShuntPot - 1);
-		green(2);
 	}
 #endif
 #endif
 }
 
+/**
+ * Restore the LEDs to the correct state, useful after coming out of suspend.
+ *
+ * We can light either the red, green or neither LED.
+ *
+ * If we are shunting, turn on the red LED.
+ * If we aren't shunting and the cell is full, turn on the green LED.
+ * Otherwise turn off both LEDs.
+ *
+ * isLedIndicatorOn is designed to cause a dark LED to flash on. If this is true
+ * then we invert the logic above.
+ *
+ */
 void restoreLed() {
 	if (minCurrent) {
-		setRed();
+		if (isLedIndicatorOn) {
+			setGreen();
+		} else {
+			setRed();
+		}
 	} else if (vCell > FULL_VOLTAGE) {
-		setGreen();
+		if (isLedIndicatorOn) {
+			setRed();
+		} else {
+			setGreen();
+		}
 	} else {
-		ledOff();
+		if (isLedIndicatorOn) {
+			setGreen();
+		} else {
+			ledOff();
+		}
 	}
+}
+
+/** Turn on an LED, see @restoreLed() for how this works */
+void setLedIndicator(unsigned char isOn) {
+	isLedIndicatorOn = isOn;
+	restoreLed();
 }
 
 #ifdef MAP_CURRENT_MATRIX
