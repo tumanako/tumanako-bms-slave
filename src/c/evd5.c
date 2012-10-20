@@ -63,18 +63,22 @@
 // SDCC is little endian
 #define EEPROM_CELL_ID_ADDRESS 0x10
 
+#define ESCAPE_CHARACTER 0xff
+#define START_OF_PACKET 0xfe
+
 // packet
 // 2 character cell id
 // 1 character sequence number
 // 1 character command
 // 2 character crc
 // TODO replace with enum
-#define STATE_WANT_CELL_ID_LOW 0
-#define STATE_WANT_CELL_ID_HIGH 1
-#define STATE_WANT_SEQUENCE_NUMBER 2
-#define STATE_WANT_COMMAND 3
-#define STATE_WANT_CRC_LOW 4
-#define STATE_WANT_CRC_HIGH 5
+#define WANT_START_OF_PACKET 0
+#define STATE_WANT_CELL_ID_LOW 1
+#define STATE_WANT_CELL_ID_HIGH 2
+#define STATE_WANT_SEQUENCE_NUMBER 3
+#define STATE_WANT_COMMAND 4
+#define STATE_WANT_CRC_LOW 5
+#define STATE_WANT_CRC_HIGH 6
 
 /* Setup chip configuration */
 #ifdef SDCC
@@ -153,6 +157,7 @@ volatile unsigned char at (SOFTWARE_ADDRESSING_ADDR) softwareAddressing = 1;
 volatile unsigned char at (AUTOMATIC_ADDR) automatic = 1;
 
 volatile unsigned char state = STATE_WANT_CELL_ID_HIGH;
+unsigned char escape = 0;
 
 // SDCC's pic14 port does not save the "stack" so we have to save it.
 // Currently we are only saving the first 7 bytes because that's all we use
@@ -219,13 +224,23 @@ void interruptHandler(void) {
 		hasRx = 1;
 		rxStart++;
 		if (softwareAddressing) {
+			if (rx == ESCAPE_CHARACTER && !escape) {
+				escape = 1;
+				continue;
+			}
+			if (rx == START_OF_PACKET && !escape) {
+				rxCRC = crc_update(crc_init(), rx);
+				state = STATE_WANT_CELL_ID_LOW;
+				continue;
+			}
+			escape = 0;
 			switch (state) {
 				case STATE_WANT_CELL_ID_LOW :
 					if (rx == CELL_ID_LOW) {
-						rxCRC = crc_update(crc_init(), rx);
+						rxCRC = crc_update(rxCRC, rx);
 						state = STATE_WANT_CELL_ID_HIGH;
 					} else {
-						state = STATE_WANT_CELL_ID_LOW;
+						state = WANT_START_OF_PACKET;
 					}
 				break;
 				case STATE_WANT_CELL_ID_HIGH :
@@ -233,7 +248,7 @@ void interruptHandler(void) {
 						rxCRC = crc_update(rxCRC, rx);
 						state = STATE_WANT_SEQUENCE_NUMBER;
 					} else {
-						state = STATE_WANT_CELL_ID_LOW;
+						state = WANT_START_OF_PACKET;
 					}
 					break;
 				case STATE_WANT_SEQUENCE_NUMBER :
@@ -251,17 +266,17 @@ void interruptHandler(void) {
 					if (rx == (unsigned char) (rxCRC & 0x00FF)) {
 						state = STATE_WANT_CRC_HIGH;
 					} else {
-						state = STATE_WANT_CELL_ID_LOW;
+						state = WANT_START_OF_PACKET;
 					}
 					break;
 				case STATE_WANT_CRC_HIGH :
 					if (rx == rxCRC >> 8) {
 						executeCommand(command);
 					}
-					state = STATE_WANT_CELL_ID_LOW;
+					state = WANT_START_OF_PACKET;
 					break;
 				default :
-					state = STATE_WANT_CELL_ID_LOW;
+					state = WANT_START_OF_PACKET;
 					break;
 			}
 			//tx(state);
