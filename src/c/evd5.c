@@ -31,7 +31,7 @@
 //#define RESISTOR_SHUNT
 //#define HARD_SWITCHED_SHUNT
 
-#define PROTOCOL_VERSION 1
+#define PROTOCOL_VERSION 2
 
 #ifndef CELL_ID_LOW
 #define CELL_ID_LOW 0
@@ -439,19 +439,29 @@ void executeCommand(unsigned char rx) {
 		case 'x' :
 			halt();
 			break;
-		case '>' :
-			if (minCurrent < MAX_SHUNT_CURRENT) {
-				minCurrent += 50;
-			}
-			txShort(minCurrent);
-			crlf();
+		case '0' :
+			minCurrent = 0;
 			break;
-		case '<' :
-			if (minCurrent > 0) {
-				minCurrent -= 50;
-			}
-			txShort(minCurrent);
-			crlf();
+		case '3' :
+			minCurrent = 150;
+			break;
+		case '4' :
+			minCurrent = 200;
+			break;
+		case '5' :
+			minCurrent = 250;
+			break;
+		case '6' :
+			minCurrent = 300;
+			break;
+		case '7' :
+			minCurrent = 350;
+			break;
+		case '8' :
+			minCurrent = 400;
+			break;
+		case '9' :
+			minCurrent = 450;
 			break;
 		case '#' :
 			softwareAddressing = 1 - softwareAddressing;
