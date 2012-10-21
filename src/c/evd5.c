@@ -83,7 +83,7 @@ typedef unsigned int config;
 config at 0x2007 __CONFIG = _CP_OFF & _CPD_OFF & _BOD_OFF & _PWRTE_ON & _WDT_OFF & _INTRC_OSC_NOCLKOUT & _MCLRE_ON & _FCMEN_OFF & _IESO_OFF;
 #endif
 
-void main();
+int main();
 #ifdef SDCC
 void interruptHandler(void) __interrupt 0;
 #else
@@ -324,7 +324,7 @@ void interruptHandler(void) {
 #endif
 }
 
-void main(void) {
+int main(void) {
 	OSCCON = BIN(01010000);		// set internal clock for 2MHz freq
 	SPBRG = 12;			// set baud rate
 
