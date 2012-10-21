@@ -25,7 +25,6 @@
  */
 #define ADC_TIME 0x50
 
-void tx(unsigned char c);
 void txByte(unsigned char b);
 void txShort(unsigned short i);
 short txCrc(char c, short crc);
@@ -46,6 +45,7 @@ void restoreLed();
 #define green(time) setGreen(); sleep(time); restoreLed()
 #define red(time) setRed(); sleep(time); restoreLed()
 #define crlf() tx(10); tx(13)
+#define tx(c) while (TXIF == 0) { } TXREG = (c)
 
 #ifdef SDCC
 #define disableInterrupts() _asm \

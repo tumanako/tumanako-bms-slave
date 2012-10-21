@@ -26,13 +26,6 @@
 #include "util.h"
 #include "crc.h"
 
-void tx(unsigned char c) {
-	while (TXIF == 0) {
-		// spin
-	}
-	TXREG = c;
-}
-
 void txShort(unsigned short s) {
 	unsigned char ones = s % 10;
 	unsigned char tens = (s / 10) % 10;
