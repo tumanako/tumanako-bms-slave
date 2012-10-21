@@ -46,13 +46,11 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<fileInfo id="cdt.managedbuild.config.gnu.exe.debug.25909102.1375163523" name="evd5_old.asm" rcbsApplicability="disable" resourcePath="evd5_old.asm" toolsToInvoke="cdt.managedbuild.tool.gnu.assembler.exe.debug.324549523.1121708789">
-						<tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.324549523.1121708789" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug.324549523">
-							<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1694674683" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-						</tool>
+					<fileInfo id="cdt.managedbuild.config.gnu.exe.debug.25909102.1459078534" name="crc.asm" rcbsApplicability="disable" resourcePath="crc.asm" toolsToInvoke="cdt.managedbuild.tool.gnu.assembler.exe.debug.324549523.1391884952">
+						<tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.324549523.1391884952" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug.324549523"/>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="evd5_old.asm|disableInterrupts.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="crc.asm|evd5_old.asm|disableInterrupts.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -106,16 +104,19 @@
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="evd5.cdt.managedbuild.target.gnu.exe.1822908815" name="Executable" projectType="cdt.managedbuild.target.gnu.exe"/>
 	</storageModule>
+	<storageModule moduleId="refreshScope" versionNumber="1">
+		<resource resourceType="PROJECT" workspacePath="/evd5"/>
+	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.25909102;cdt.managedbuild.config.gnu.exe.debug.25909102.1432891427;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.1837822703.143182438;cdt.managedbuild.tool.gnu.c.compiler.input.604375973">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.443539538;cdt.managedbuild.config.gnu.exe.release.443539538.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.99080228;cdt.managedbuild.tool.gnu.c.compiler.input.264755801">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.25909102;cdt.managedbuild.config.gnu.exe.debug.25909102.;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.1837822703;cdt.managedbuild.tool.gnu.c.compiler.input.1005906877">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
-	</storageModule>
-	<storageModule moduleId="refreshScope" versionNumber="1">
-		<resource resourceType="PROJECT" workspacePath="/evd5"/>
 	</storageModule>
 </cproject>
