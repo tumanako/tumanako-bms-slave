@@ -48,9 +48,25 @@ void txByte(unsigned char b) {
 	tx(0x30 + ones);
 }
 
-short txCrc(char c, short crc) {
+short txCrc(unsigned char c, short crc) {
 	tx(c);
 	return crc_update(crc, c);
+}
+
+short txEscapeCrc(unsigned char c, short crc) {
+	// we inline txEscape here to avoid stack overflow
+	if (c == ESCAPE_CHARACTER || c == START_OF_PACKET) {
+		tx(ESCAPE_CHARACTER);
+	}
+	tx(c);
+	return crc_update(crc, c);
+}
+
+short txEscape(unsigned char c) {
+	if (c == ESCAPE_CHARACTER || c == START_OF_PACKET) {
+		tx(ESCAPE_CHARACTER);
+	}
+	tx(c);
 }
 
 unsigned short sabs(short s) {

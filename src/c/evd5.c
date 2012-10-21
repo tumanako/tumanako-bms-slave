@@ -63,9 +63,6 @@
 // SDCC is little endian
 #define EEPROM_CELL_ID_ADDRESS 0x10
 
-#define ESCAPE_CHARACTER 0xff
-#define START_OF_PACKET 0xfe
-
 // packet
 // 2 character cell id
 // 1 character sequence number
@@ -589,31 +586,35 @@ void txBinStatus() {
 	short crc = crc_init();
 	unsigned char i;
 
-	crc = txCrc(CELL_ID_LOW, crc);
-	crc = txCrc(CELL_ID_HIGH, crc);
+	crc = txCrc(START_OF_PACKET, crc);
+	crc = txEscapeCrc(CELL_ID_LOW, crc);
+	crc = txEscapeCrc(CELL_ID_HIGH, crc);
 
 	for (i = 0; i < EVD5_STATUS_LENGTH - 4; i++) {
-		crc = txCrc(*buf, crc);
+		crc = txEscapeCrc(*buf, crc);
 		buf++;
 	}
 	crc = crc_finalize(crc);
-	tx(crc);
-	tx(crc >> 8);
+	txEscape(crc);
+	txEscape(crc >> 8);
 }
 
 void txVersion() {
 	short crc = crc_init();
-	crc = txCrc(PROTOCOL_VERSION, crc);
-	crc = txCrc(REVISION_LOW, crc);
-	crc = txCrc(REVISION_HIGH, crc);
-	crc = txCrc(IS_CLEAN, crc);
-	crc = txCrc(PROGRAM_DATE_0, crc);
-	crc = txCrc(PROGRAM_DATE_1, crc);
-	crc = txCrc(PROGRAM_DATE_2, crc);
-	crc = txCrc(PROGRAM_DATE_3, crc);
+	crc = txCrc(START_OF_PACKET, crc);
+	crc = txEscapeCrc(CELL_ID_LOW, crc);
+	crc = txEscapeCrc(CELL_ID_HIGH, crc);
+	crc = txEscapeCrc(PROTOCOL_VERSION, crc);
+	crc = txEscapeCrc(REVISION_LOW, crc);
+	crc = txEscapeCrc(REVISION_HIGH, crc);
+	crc = txEscapeCrc(IS_CLEAN, crc);
+	crc = txEscapeCrc(PROGRAM_DATE_0, crc);
+	crc = txEscapeCrc(PROGRAM_DATE_1, crc);
+	crc = txEscapeCrc(PROGRAM_DATE_2, crc);
+	crc = txEscapeCrc(PROGRAM_DATE_3, crc);
 	crc = crc_finalize(crc);
-	tx(crc);
-	tx(crc >> 8);
+	txEscape(crc);
+	txEscape(crc >> 8);
 }
 
 void halt() {

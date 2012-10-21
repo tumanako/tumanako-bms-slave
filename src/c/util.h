@@ -25,9 +25,14 @@
  */
 #define ADC_TIME 0x50
 
+#define ESCAPE_CHARACTER 0xff
+#define START_OF_PACKET 0xfe
+
 void txByte(unsigned char b);
 void txShort(unsigned short i);
-short txCrc(char c, short crc);
+short txCrc(unsigned char c, short crc);
+short txEscapeCrc(unsigned char c, short crc);
+short txEscape(unsigned char c);
 
 unsigned short sabs(short s);
 void sleep(unsigned char time);
@@ -45,6 +50,7 @@ void restoreLed();
 #define green(time) setGreen(); sleep(time); restoreLed()
 #define red(time) setRed(); sleep(time); restoreLed()
 #define crlf() tx(10); tx(13)
+
 #define tx(c) while (TXIF == 0) { } TXREG = (c)
 
 #ifdef SDCC
