@@ -34,7 +34,7 @@ void txByte(unsigned char b);
 void txShort(unsigned short i);
 crc_t txCrc(unsigned char c, crc_t crc);
 crc_t txEscapeCrc(unsigned char c, crc_t crc);
-short txEscape(unsigned char c);
+void txEscape(unsigned char c);
 
 unsigned short sabs(short s);
 void sleep(unsigned char time);

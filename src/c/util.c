@@ -62,7 +62,7 @@ crc_t txEscapeCrc(unsigned char c, crc_t crc) {
 	return crc_update(crc, c);
 }
 
-short txEscape(unsigned char c) {
+void txEscape(unsigned char c) {
 	if (c == ESCAPE_CHARACTER || c == START_OF_PACKET) {
 		tx(ESCAPE_CHARACTER);
 	}
