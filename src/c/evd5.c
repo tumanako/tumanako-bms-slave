@@ -133,7 +133,7 @@ volatile unsigned char timerOverflow = 1;
 #define CRC_ADDR			AUTOMATIC_ADDR + 1
 
 volatile unsigned char command;
-unsigned short rxCRC;
+crc_t rxCRC;
 
 volatile unsigned short at (I_SHUNT_ADDR) iShunt;
 volatile unsigned short at (V_CELL_ADDR) vCell;
@@ -565,7 +565,7 @@ void setGainPot(unsigned char c) {
 
 void txBinStatus() {
 	unsigned char *buf = (unsigned char *) &iShunt;
-	short crc = crc_init();
+	crc_t crc = crc_init();
 	unsigned char i;
 
 	crc = txCrc(START_OF_PACKET, crc);
@@ -582,7 +582,7 @@ void txBinStatus() {
 }
 
 void txVersion() {
-	short crc = crc_init();
+	crc_t crc = crc_init();
 	crc = txCrc(START_OF_PACKET, crc);
 	crc = txEscapeCrc(CELL_ID_LOW, crc);
 	crc = txEscapeCrc(CELL_ID_HIGH, crc);

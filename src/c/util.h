@@ -18,6 +18,8 @@
     <http://www.gnu.org/licenses/>.
 */
 
+#include "crc.h"
+
 /** 
  * How long to make ADC measurements for, see adc(). This is the high byte only, so multiply by 256.
  * Fosc is 2MHz, and we divide that by 4 and 4 again to get 12.5kHz, multiply by 0x5000 to get 163ms.
@@ -30,8 +32,8 @@
 
 void txByte(unsigned char b);
 void txShort(unsigned short i);
-short txCrc(unsigned char c, short crc);
-short txEscapeCrc(unsigned char c, short crc);
+crc_t txCrc(unsigned char c, crc_t crc);
+crc_t txEscapeCrc(unsigned char c, crc_t crc);
 short txEscape(unsigned char c);
 
 unsigned short sabs(short s);

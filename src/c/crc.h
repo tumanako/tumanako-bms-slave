@@ -38,7 +38,7 @@ extern "C" {
  *
  * This type must be big enough to contain at least 16 bits.
  *****************************************************************************/
-typedef unsigned int crc_t;
+typedef unsigned short crc_t;
 
 /**
  * Calculate the initial crc value.
