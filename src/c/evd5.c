@@ -116,10 +116,6 @@ void setLedIndicator(unsigned char isOn);
 // TODO provide interface to get and clear this
 unsigned char eventOverCurrent = 0;
 
-volatile char rxBuf[RX_BUF_SIZE];
-volatile unsigned char rxStart = 0;
-volatile unsigned char rxEnd = 0;
-
 // incremented each time the timer overflows (skips multiples of 32)
 volatile unsigned char timerOverflow = 1;
 
@@ -208,27 +204,22 @@ void interruptHandler(void) __interrupt 0 {
 #else
 void interruptHandler(void) {
 #endif
-	if (RCIF) {
-		rxBuf[rxEnd % RX_BUF_SIZE] = RCREG;
-		rxEnd++;
-	}
 	if (TMR1IF) {
 		timerOverflow++;
 		TMR1IF = 0;
 	}
-	while (rxStart != rxEnd) {
-		unsigned char rx = rxBuf[rxStart % RX_BUF_SIZE];
+	if (RCIF) {
+		unsigned char rx = RCREG;
 		hasRx = 1;
-		rxStart++;
 		if (softwareAddressing) {
 			if (rx == ESCAPE_CHARACTER && !escape) {
 				escape = 1;
-				continue;
+				return;
 			}
 			if (rx == START_OF_PACKET && !escape) {
 				rxCRC = crc_update(crc_init(), rx);
 				state = STATE_WANT_CELL_ID_LOW;
-				continue;
+				return;
 			}
 			escape = 0;
 			switch (state) {
