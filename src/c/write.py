@@ -178,6 +178,7 @@ extra = extra + " -DPROGRAM_DATE_0=" + str(config.whenProgrammed >> 0 & 0xff)
 extra = extra + " -DPROGRAM_DATE_1=" + str(config.whenProgrammed >> 8 & 0xff)
 extra = extra + " -DPROGRAM_DATE_2=" + str(config.whenProgrammed >> 16 & 0xff)
 extra = extra + " -DPROGRAM_DATE_3=" + str(config.whenProgrammed >> 24 & 0xff)
+extra = extra + " -DKELVIN_CONNECTION=" + str(int(config.kelvinConnection))
 if config.resistorShunt:
 	extra = extra + " -DRESISTOR_SHUNT=1"
 if config.hardSwitchedShunt:

@@ -37,6 +37,8 @@
 #define CELL_ID_LOW 0
 #define CELL_ID_HIGH 0
 
+#define KELVIN_CONNECTION 0
+
 #define REVISION_LOW 0
 #define REVISION_HIGH 0
 
@@ -572,6 +574,17 @@ void txVersion() {
 	crc = txEscapeCrc(CELL_ID_LOW, crc);
 	crc = txEscapeCrc(CELL_ID_HIGH, crc);
 	crc = txEscapeCrc(PROTOCOL_VERSION, crc);
+	crc = txEscapeCrc(KELVIN_CONNECTION, crc);
+#ifdef RESISTOR_SHUNT
+	crc = txEscapeCrc(1, crc);
+#else
+	crc = txEscapeCrc(0, crc);
+#endif
+#ifdef HARD_SWITCHED_SHUNT
+	crc = txEscapeCrc(1, crc);
+#else
+	crc = txEscapeCrc(0, crc);
+#endif
 	crc = txEscapeCrc(REVISION_LOW, crc);
 	crc = txEscapeCrc(REVISION_HIGH, crc);
 	crc = txEscapeCrc(IS_CLEAN, crc);
