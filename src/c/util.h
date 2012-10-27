@@ -56,9 +56,9 @@ void restoreLed();
 #define tx(c) while (TXIF == 0) { } TXREG = (c)
 
 #ifdef SDCC
-#define disableInterrupts() _asm \
+#define disableInterrupts() __asm \
 	include disableInterrupts.asm \
-_endasm
+__endasm
 #else
 #define disableInterrupts()
 #endif

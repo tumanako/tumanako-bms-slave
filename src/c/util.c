@@ -22,7 +22,7 @@
 
 /* Define processor and include header file. */
 #define __16f688
-#include "pic/pic16f688.h"
+#include "pic14/pic16f688.h"
 #include "util.h"
 #include "crc.h"
 
@@ -132,9 +132,9 @@ unsigned long adc(unsigned char con) {
 	
 		// TODO why do we have a NOP here?
 #ifdef SDCC
-		_asm
+		__asm
 			nop
-		_endasm;
+		__endasm;
 #endif
 
 		GO = 1;

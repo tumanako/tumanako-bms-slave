@@ -22,7 +22,7 @@
 
 /* Define processor and include header file. */
 #define __16f688
-#include "pic/pic16f688.h"
+#include "pic14/pic16f688.h"
 #include "util.h"
 #include "evd5.h"
 #include "crc.h"
@@ -80,7 +80,7 @@
 /* Setup chip configuration */
 #ifdef SDCC
 typedef unsigned int config;
-config at 0x2007 __CONFIG = _CP_OFF & _CPD_OFF & _BOD_OFF & _PWRTE_ON & _WDT_OFF & _INTRC_OSC_NOCLKOUT & _MCLRE_ON & _FCMEN_OFF & _IESO_OFF;
+config __at 0x2007 __CONFIG = _CP_OFF & _CPD_OFF & _BOD_OFF & _PWRTE_ON & _WDT_OFF & _INTRC_OSC_NOCLKOUT & _MCLRE_ON & _FCMEN_OFF & _IESO_OFF;
 #endif
 
 int main();
@@ -135,19 +135,19 @@ volatile unsigned char timerOverflow = 1;
 volatile unsigned char command;
 crc_t rxCRC;
 
-volatile unsigned short at (I_SHUNT_ADDR) iShunt;
-volatile unsigned short at (V_CELL_ADDR) vCell;
-volatile unsigned short at (V_SHUNT_ADDR) vShunt;
-volatile unsigned short at (TEMPERATURE_ADDR) temperature;
-volatile unsigned short at (MIN_CURRENT_ADDR) minCurrent = 0;
-volatile unsigned char at (SEQUENCE_NUMBER_ADDR) sequenceNumber;
+volatile unsigned short __at (I_SHUNT_ADDR) iShunt;
+volatile unsigned short __at (V_CELL_ADDR) vCell;
+volatile unsigned short __at (V_SHUNT_ADDR) vShunt;
+volatile unsigned short __at (TEMPERATURE_ADDR) temperature;
+volatile unsigned short __at (MIN_CURRENT_ADDR) minCurrent = 0;
+volatile unsigned char __at (SEQUENCE_NUMBER_ADDR) sequenceNumber;
 // lower numbers == less gain
-volatile char at (GAIN_POT_ADDR) gainPot = MAX_POT;
+volatile char __at (GAIN_POT_ADDR) gainPot = MAX_POT;
 // lower numbers == less voltage
-volatile char at (V_SHUNT_POT_ADDR) vShuntPot = MAX_POT;
-volatile unsigned char at (HAS_RX_ADDR) hasRx = 0;
-volatile unsigned char at (SOFTWARE_ADDRESSING_ADDR) softwareAddressing = 1;
-volatile unsigned char at (AUTOMATIC_ADDR) automatic = 1;
+volatile char __at (V_SHUNT_POT_ADDR) vShuntPot = MAX_POT;
+volatile unsigned char __at (HAS_RX_ADDR) hasRx = 0;
+volatile unsigned char __at (SOFTWARE_ADDRESSING_ADDR) softwareAddressing = 1;
+volatile unsigned char __at (AUTOMATIC_ADDR) automatic = 1;
 
 volatile unsigned char state = STATE_WANT_CELL_ID_HIGH;
 unsigned char escape = 0;
@@ -155,7 +155,7 @@ unsigned char escape = 0;
 // SDCC's pic14 port does not save the "stack" so we have to save it.
 // Currently we are only saving the first 7 bytes because that's all we use
 // TODO extract this into header and assembly files.
-unsigned char at (0x139) stackSave[7];
+unsigned char __at (0x139) stackSave[7];
 
 // whether we have turned on an indicator LED
 volatile unsigned char isLedIndicatorOn = 0;
@@ -165,7 +165,7 @@ void interruptHandler(void) __interrupt 0 {
 	// SDCC's pic14 port does not save the "stack" so we have to save it.
 	// Currently we are only saving the first 7 bytes because that's all we use
 	// TODO extract this into header and assembly files.
-	_asm
+	__asm
 		BANKSEL	STK00
 		MOVF    STK00,W
 		BANKSEL	_stackSave
@@ -200,7 +200,7 @@ void interruptHandler(void) __interrupt 0 {
 		MOVF    STK06,W
 		BANKSEL	(_stackSave + 6)
 		MOVWF	(_stackSave + 6)
-	_endasm;
+	__endasm;
 #else
 void interruptHandler(void) {
 #endif
@@ -272,7 +272,7 @@ void interruptHandler(void) {
 #ifdef SDCC
 	// restore stack, see beginning of interrupt for saving
 	// TODO extract this into header and assembly files.
-	_asm
+	__asm
 		BANKSEL	(_stackSave + 0)
 		MOVF	(_stackSave + 0),W
 		BANKSEL	STK00
@@ -307,7 +307,7 @@ void interruptHandler(void) {
 		MOVF	(_stackSave + 6),W
 		BANKSEL	STK06
 		MOVWF	STK06
-	_endasm;
+	__endasm;
 #endif
 }
 
@@ -609,9 +609,9 @@ void halt() {
 	TMR1IE = 0;			// disable timer interrupt so it doesn't wake us up
 	WUE = 1;			// wake up if we receive something (recieve interrupt still enabled)
 #ifdef SDCC
-	_asm
+	__asm
 		sleep
-	_endasm;
+	__endasm;
 #endif
 	TMR1IE = 1;			// enable timer
 	green(10);
