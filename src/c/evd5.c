@@ -119,35 +119,22 @@ unsigned char eventOverCurrent = 0;
 // incremented each time the timer overflows (skips multiples of 32)
 volatile unsigned char timerOverflow = 1;
 
-#define I_SHUNT_ADDR			0x140
-#define V_CELL_ADDR			I_SHUNT_ADDR + 2
-#define V_SHUNT_ADDR			V_CELL_ADDR + 2
-#define TEMPERATURE_ADDR		V_SHUNT_ADDR + 2
-#define MIN_CURRENT_ADDR		TEMPERATURE_ADDR + 2
-#define SEQUENCE_NUMBER_ADDR		MIN_CURRENT_ADDR + 2
-#define GAIN_POT_ADDR			SEQUENCE_NUMBER_ADDR + 1
-#define V_SHUNT_POT_ADDR		GAIN_POT_ADDR + 1
-#define HAS_RX_ADDR			V_SHUNT_POT_ADDR + 1
-#define SOFTWARE_ADDRESSING_ADDR	HAS_RX_ADDR + 1
-#define AUTOMATIC_ADDR			SOFTWARE_ADDRESSING_ADDR + 1
-#define CRC_ADDR			AUTOMATIC_ADDR + 1
-
 volatile unsigned char command;
 crc_t rxCRC;
 
-volatile unsigned short __at (I_SHUNT_ADDR) iShunt;
-volatile unsigned short __at (V_CELL_ADDR) vCell;
-volatile unsigned short __at (V_SHUNT_ADDR) vShunt;
-volatile unsigned short __at (TEMPERATURE_ADDR) temperature;
-volatile unsigned short __at (MIN_CURRENT_ADDR) minCurrent = 0;
-volatile unsigned char __at (SEQUENCE_NUMBER_ADDR) sequenceNumber;
+volatile unsigned short iShunt;
+volatile unsigned short vCell;
+volatile unsigned short vShunt;
+volatile unsigned short temperature;
+volatile unsigned short minCurrent = 0;
+volatile unsigned char sequenceNumber;
 // lower numbers == less gain
-volatile char __at (GAIN_POT_ADDR) gainPot = MAX_POT;
+volatile char gainPot = MAX_POT;
 // lower numbers == less voltage
-volatile char __at (V_SHUNT_POT_ADDR) vShuntPot = MAX_POT;
-volatile unsigned char __at (HAS_RX_ADDR) hasRx = 0;
-volatile unsigned char __at (SOFTWARE_ADDRESSING_ADDR) softwareAddressing = 1;
-volatile unsigned char __at (AUTOMATIC_ADDR) automatic = 1;
+volatile char vShuntPot = MAX_POT;
+volatile unsigned char hasRx = 0;
+volatile unsigned char softwareAddressing = 1;
+volatile unsigned char automatic = 1;
 
 volatile unsigned char state = STATE_WANT_CELL_ID_HIGH;
 unsigned char escape = 0;
@@ -155,7 +142,7 @@ unsigned char escape = 0;
 // SDCC's pic14 port does not save the "stack" so we have to save it.
 // Currently we are only saving the first 7 bytes because that's all we use
 // TODO extract this into header and assembly files.
-unsigned char __at (0x139) stackSave[7];
+unsigned char stackSave[7];
 
 // whether we have turned on an indicator LED
 volatile unsigned char isLedIndicatorOn = 0;
@@ -564,18 +551,26 @@ void setGainPot(unsigned char c) {
 }
 
 void txBinStatus() {
-	unsigned char *buf = (unsigned char *) &iShunt;
 	crc_t crc = crc_init();
-	unsigned char i;
-
 	crc = txCrc(START_OF_PACKET, crc);
 	crc = txEscapeCrc(CELL_ID_LOW, crc);
 	crc = txEscapeCrc(CELL_ID_HIGH, crc);
-
-	for (i = 0; i < EVD5_STATUS_LENGTH - 4; i++) {
-		crc = txEscapeCrc(*buf, crc);
-		buf++;
-	}
+	crc = txEscapeCrc(iShunt, crc);
+	crc = txEscapeCrc(iShunt >> 8, crc);
+	crc = txEscapeCrc(vCell, crc);
+	crc = txEscapeCrc(vCell >> 8, crc);
+	crc = txEscapeCrc(vShunt, crc);
+	crc = txEscapeCrc(vShunt >> 8, crc);
+	crc = txEscapeCrc(temperature, crc);
+	crc = txEscapeCrc(temperature >> 8, crc);
+	crc = txEscapeCrc(minCurrent, crc);
+	crc = txEscapeCrc(minCurrent >> 8, crc);
+	crc = txEscapeCrc(sequenceNumber, crc);
+	crc = txEscapeCrc(gainPot, crc);
+	crc = txEscapeCrc(vShuntPot, crc);
+	crc = txEscapeCrc(hasRx, crc);
+	crc = txEscapeCrc(softwareAddressing, crc);
+	crc = txEscapeCrc(automatic, crc);
 	crc = crc_finalize(crc);
 	txEscape(crc);
 	txEscape(crc >> 8);
