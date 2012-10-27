@@ -445,8 +445,6 @@ void executeCommand(unsigned char rx) {
 			break;
 		case '$' :
 			automatic = !automatic;
-			txByte(automatic);
-			crlf();
 			break;
 	}
 	setLedIndicator(0);

@@ -30,8 +30,6 @@
 #define ESCAPE_CHARACTER 0xff
 #define START_OF_PACKET 0xfe
 
-void txByte(unsigned char b);
-void txShort(unsigned short i);
 crc_t txCrc(unsigned char c, crc_t crc);
 crc_t txEscapeCrc(unsigned char c, crc_t crc);
 void txEscape(unsigned char c);
