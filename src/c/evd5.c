@@ -381,12 +381,6 @@ int main(void) {
 void executeCommand(unsigned char rx) {
 	setLedIndicator(1);
 	switch (rx) {
-		case 'p' :
-			vddOn();
-			break;
-		case 'o' :
-			vddOff();
-			break;
 		case 'u' :
 			setVShuntPot(vShuntPot + 1);
 			break;
@@ -415,9 +409,6 @@ void executeCommand(unsigned char rx) {
 			break;
 		case '?' :
 			txVersion();
-			break;
-		case 'x' :
-			halt();
 			break;
 		case '0' :
 			minCurrent = 0;
