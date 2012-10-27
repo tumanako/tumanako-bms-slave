@@ -93,26 +93,11 @@ void interruptHandler(void) __interrupt 0;
 #else
 void interruptHandler(void);
 #endif
-void executeCommand(unsigned char rx);
 void halt();
 
-unsigned short getIShunt();
-unsigned short getTemperature();
-unsigned short getVCell();
-unsigned short getVShunt(unsigned short vCell);
-
-void txBinStatus();
-void txVersion();
-
-void vddOn();
 #ifdef MAP_CURRENT_MATRIX
 void mapCurrentMatrix();
 #endif
-
-void setIShunt(unsigned short i);
-void setVShuntPot(unsigned char c);
-void setGainPot(unsigned char c);
-void setLedIndicator(unsigned char isOn);
 
 // the number of times we have seen overcurrent on the shunt
 // TODO provide interface to get and clear this
@@ -153,6 +138,217 @@ unsigned char stackSave[7];
 
 // whether we have turned on an indicator LED
 volatile unsigned char isLedIndicatorOn = 0;
+
+void txBinStatus() {
+	crc_t crc = crc_init();
+	crc = txCrc(START_OF_PACKET, crc);
+	crc = txEscapeCrc(CELL_ID_LOW, crc);
+	crc = txEscapeCrc(CELL_ID_HIGH, crc);
+	crc = txEscapeCrc(iShunt, crc);
+	crc = txEscapeCrc(iShunt >> 8, crc);
+	crc = txEscapeCrc(vCell, crc);
+	crc = txEscapeCrc(vCell >> 8, crc);
+	crc = txEscapeCrc(vShunt, crc);
+	crc = txEscapeCrc(vShunt >> 8, crc);
+	crc = txEscapeCrc(temperature, crc);
+	crc = txEscapeCrc(temperature >> 8, crc);
+	crc = txEscapeCrc(minCurrent, crc);
+	crc = txEscapeCrc(minCurrent >> 8, crc);
+	crc = txEscapeCrc(gainPot, crc);
+	crc = txEscapeCrc(vShuntPot, crc);
+	crc = txEscapeCrc(hasRx, crc);
+	crc = txEscapeCrc(softwareAddressing, crc);
+	crc = txEscapeCrc(automatic, crc);
+	crc = crc_finalize(crc);
+	txEscape(crc);
+	txEscape(crc >> 8);
+}
+
+void txVersion() {
+	crc_t crc = crc_init();
+	crc = txCrc(START_OF_PACKET, crc);
+	crc = txEscapeCrc(CELL_ID_LOW, crc);
+	crc = txEscapeCrc(CELL_ID_HIGH, crc);
+	crc = txEscapeCrc(PROTOCOL_VERSION, crc);
+	crc = txEscapeCrc(KELVIN_CONNECTION, crc);
+#ifdef RESISTOR_SHUNT
+	crc = txEscapeCrc(1, crc);
+#else
+	crc = txEscapeCrc(0, crc);
+#endif
+#ifdef HARD_SWITCHED_SHUNT
+	crc = txEscapeCrc(1, crc);
+#else
+	crc = txEscapeCrc(0, crc);
+#endif
+	crc = txEscapeCrc(REVISION_LOW, crc);
+	crc = txEscapeCrc(REVISION_HIGH, crc);
+	crc = txEscapeCrc(IS_CLEAN, crc);
+	crc = txEscapeCrc(PROGRAM_DATE_0, crc);
+	crc = txEscapeCrc(PROGRAM_DATE_1, crc);
+	crc = txEscapeCrc(PROGRAM_DATE_2, crc);
+	crc = txEscapeCrc(PROGRAM_DATE_3, crc);
+	crc = crc_finalize(crc);
+	txEscape(crc);
+	txEscape(crc >> 8);
+}
+
+/**
+ * Restore the LEDs to the correct state, useful after coming out of suspend.
+ *
+ * We can light either the red, green or neither LED.
+ *
+ * If we are shunting, turn on the red LED.
+ * If we aren't shunting and the cell is full, turn on the green LED.
+ * Otherwise turn off both LEDs.
+ *
+ * isLedIndicatorOn is designed to cause a dark LED to flash on. If this is true
+ * then we invert the logic above.
+ *
+ */
+void restoreLed() {
+	if (minCurrent) {
+		if (isLedIndicatorOn) {
+			setGreen();
+		} else {
+			setRed();
+		}
+	} else if (vCell > FULL_VOLTAGE) {
+		if (isLedIndicatorOn) {
+			setRed();
+		} else {
+			setGreen();
+		}
+	} else {
+		if (isLedIndicatorOn) {
+			setGreen();
+		} else {
+			ledOff();
+		}
+	}
+}
+
+/** Turn on an LED, see @restoreLed() for how this works */
+void setLedIndicator(unsigned char isOn) {
+	isLedIndicatorOn = isOn;
+	restoreLed();
+}
+
+// todo find out how to pass a register and combine with setGainPot
+void setVShuntPot(unsigned char c) {
+	unsigned char i;
+	if (c > MAX_POT) {
+		c = MAX_POT;
+	}
+	// first drive to 0
+	RA5 = 1;			// set U/D high for increment (decreses voltage)
+	RA2 = 0;			// set /CS0 low (active)
+	for (i = 64; i != 0; i--) {
+		RA5 = 0;		// pulse low
+		RA5 = 1;		// back to high
+	}
+	RA2 = 1;			// release chip select CS0 (set high)
+
+	// now drive to desired value
+	RA5 = 0;			// set U/D low for decrement (increases voltage)
+	RA2 = 0;			// set /CS0 low (active)
+	for (i = c; i != 0; i--) {
+		RA5 = 1;		// pulse high
+		RA5 = 0;		// back to low
+	}
+	RA2 = 1;			// release chip select CS0 (set high)
+	vShuntPot = c;
+	restoreLed();
+}
+
+void setGainPot(unsigned char c) {
+	unsigned char i;
+	if (c > MAX_POT) {
+		c = MAX_POT;
+	}
+	// first drive to 0
+	RA5 = 1;			// set U/D high for increment (decreses voltage)
+	RA0 = 0;			// set /CS1 low (active)
+	for (i = 64; i != 0; i--) {
+		RA5 = 0;		// pulse low
+		RA5 = 1;		// back to high
+	}
+	RA0 = 1;			// release chip select CS0 (set high)
+
+	// now drive to desired value
+	RA5 = 0;			// set U/D low for decrement (increases voltage)
+	RA0 = 0;			// set /CS0 low (active)
+	for (i = c; i != 0; i--) {
+		RA5 = 1;		// pulse high
+		RA5 = 0;		// back to low
+	}
+	RA0 = 1;			// release chip select CS0 (set high)
+	gainPot = c;
+	restoreLed();
+}
+
+void executeCommand(unsigned char rx) {
+	setLedIndicator(1);
+	switch (rx) {
+		case 'u' :
+			setVShuntPot(vShuntPot + 1);
+			break;
+		case 'd' :
+			setVShuntPot(vShuntPot - 1);
+			break;
+		case '1' :
+			setGainPot(gainPot - 1);
+			break;
+		case '2' :
+			setGainPot(gainPot + 1);
+			break;
+		case 'g' :
+			green(200);
+			break;
+		case 'r' :
+			red(200);
+			break;
+#ifdef MAP_CURRENT_MATRIX
+		case 'm' :
+			mapCurrentMatrix();
+			break;
+#endif
+		case '/' :
+			txBinStatus();
+			break;
+		case '?' :
+			txVersion();
+			break;
+		case '0' :
+			minCurrent = 0;
+			break;
+		case '3' :
+			minCurrent = 150;
+			break;
+		case '4' :
+			minCurrent = 200;
+			break;
+		case '5' :
+			minCurrent = 250;
+			break;
+		case '6' :
+			minCurrent = 300;
+			break;
+		case '7' :
+			minCurrent = 350;
+			break;
+		case '8' :
+			minCurrent = 400;
+			break;
+		case '9' :
+			minCurrent = 450;
+			break;
+		case '$' :
+			automatic = !automatic;
+			break;
+	}
+	setLedIndicator(0);
+}
 
 #ifdef SDCC
 void interruptHandler(void) __interrupt 0 {
@@ -298,6 +494,110 @@ void interruptHandler(void) {
 #endif
 }
 
+unsigned short getTemperature() {
+	unsigned short result = ~(adc(BIN(10010101)) / 1000) & 0x03FF;
+	// TODO derive this equation!
+	return (10700000l - 11145l * result) / 1000;
+}
+
+unsigned short getVCell() {
+	unsigned long result = adc(BIN(10000101));
+	// TODO derive this equation!
+	return 1254400000l / result;
+}
+
+unsigned short getVShunt(unsigned short vCell) {
+	unsigned long shunt = adc(BIN(10001101));
+	// TODO derive this equation!
+	return vCell * shunt / 1024 / 1000l;
+}
+
+unsigned short getIShunt() {
+	unsigned long result = adc(BIN(11011101));
+	// TODO derive this equation!
+	return 1225l * result / 49l / 10240l;
+}
+
+void vddOn() {
+	RC0 = 0;	// turn on FET Qx02
+	sleep(10);  // give pots time to turn on
+	setGainPot(GAIN_POT_OFF);
+	setVShuntPot(V_SHUNT_POT_OFF);
+}
+
+void setIShunt(unsigned short targetShuntCurrent) {
+#ifdef HARD_SWITCHED_SHUNT
+	if (targetShuntCurrent == 0) {
+		RA2 = 0;
+	} else {
+		RA2 = 1;
+	}
+#else
+	short difference;
+	// if we want zero current, park pots at ..._POT_OFF position
+	if (targetShuntCurrent == 0) {
+		if (gainPot != GAIN_POT_OFF) {
+			setGainPot(GAIN_POT_OFF);
+		}
+		if (vShuntPot != V_SHUNT_POT_OFF) {
+			setVShuntPot(V_SHUNT_POT_OFF);
+		}
+		return;
+	}
+#ifdef RESISTOR_SHUNT
+	if (targetShuntCurrent != 0 && (gainPot != GAIN_POT_RESISTOR_ON || vShuntPot != V_SHUNT_POT_RESISTOR_ON)) {
+		setGainPot(GAIN_POT_RESISTOR_ON);
+		setVShuntPot(V_SHUNT_POT_RESISTOR_ON);
+	}
+#else
+	// first do current limit
+	if (iShunt > ABS_MAX_SHUNT_CURRENT) {
+		setGainPot(GAIN_POT_OFF);
+		setVShuntPot(GAIN_POT_OFF);
+		if (eventOverCurrent < 255) {
+			eventOverCurrent++;
+		}
+		return;
+	}
+	difference = iShunt - targetShuntCurrent;
+	if (sabs(difference) < SHUNT_CURRENT_HYSTERISIS) {
+		return;
+	}
+	if (difference < 0) {
+		if (vShuntPot >= MAX_POT) {
+			setVShuntPot(vShuntPot - 10);
+			setGainPot(gainPot + 1);
+		}
+		setVShuntPot(vShuntPot + 1);
+		red(2);
+	} else {
+		// TODO reduce gain
+		setVShuntPot(vShuntPot - 1);
+	}
+#endif
+#endif
+}
+
+void halt() {
+	minCurrent = 0;
+	setIShunt(0);
+	red(100);
+	green(100);
+	ledOff();
+	vddOff();
+	TMR1IE = 0;			// disable timer interrupt so it doesn't wake us up
+	WUE = 1;			// wake up if we receive something (recieve interrupt still enabled)
+#ifdef SDCC
+	__asm
+		sleep
+	__endasm;
+#endif
+	TMR1IE = 1;			// enable timer
+	green(10);
+	red(10);
+	vddOn();
+}
+
 int main(void) {
 	OSCCON = BIN(01010000);		// set internal clock for 2MHz freq
 	SPBRG = 12;			// set baud rate
@@ -322,7 +622,7 @@ int main(void) {
 	PORTC = 0;
 	TRISA = BIN(11011010);
 	TRISC = BIN(11101010);
- 
+
 	ADCON1 = BIN(01000000);		// sets clock source
 
 	RA2 = 1;			// release chip select on shunt voltage control
@@ -381,321 +681,6 @@ int main(void) {
 			setIShunt(minCurrent);
 		}
 	}
-}
-
-void executeCommand(unsigned char rx) {
-	setLedIndicator(1);
-	switch (rx) {
-		case 'u' :
-			setVShuntPot(vShuntPot + 1);
-			break;
-		case 'd' :
-			setVShuntPot(vShuntPot - 1);
-			break;
-		case '1' :
-			setGainPot(gainPot - 1);
-			break;
-		case '2' :
-			setGainPot(gainPot + 1);
-			break;
-		case 'g' :
-			green(200);
-			break;
-		case 'r' :
-			red(200);
-			break;
-#ifdef MAP_CURRENT_MATRIX
-		case 'm' :
-			mapCurrentMatrix();
-			break;
-#endif
-		case '/' :
-			txBinStatus();
-			break;
-		case '?' :
-			txVersion();
-			break;
-		case '0' :
-			minCurrent = 0;
-			break;
-		case '3' :
-			minCurrent = 150;
-			break;
-		case '4' :
-			minCurrent = 200;
-			break;
-		case '5' :
-			minCurrent = 250;
-			break;
-		case '6' :
-			minCurrent = 300;
-			break;
-		case '7' :
-			minCurrent = 350;
-			break;
-		case '8' :
-			minCurrent = 400;
-			break;
-		case '9' :
-			minCurrent = 450;
-			break;
-		case '$' :
-			automatic = !automatic;
-			break;
-	}
-	setLedIndicator(0);
-}
-
-unsigned short getTemperature() {
-	unsigned short result = ~(adc(BIN(10010101)) / 1000) & 0x03FF;
-	// TODO derive this equation!
-	return (10700000l - 11145l * result) / 1000;
-}
-
-unsigned short getVCell() {
-	unsigned long result = adc(BIN(10000101));
-	// TODO derive this equation!
-	return 1254400000l / result;
-}
-
-unsigned short getVShunt(unsigned short vCell) {
-	unsigned long shunt = adc(BIN(10001101));
-	// TODO derive this equation!
-	return vCell * shunt / 1024 / 1000l;
-}
-
-unsigned short getIShunt() {
-	unsigned long result = adc(BIN(11011101));
-	// TODO derive this equation!
-	return 1225l * result / 49l / 10240l;
-}
-
-void vddOn() {
-	RC0 = 0;	// turn on FET Qx02
-	sleep(10);  // give pots time to turn on
-	setGainPot(GAIN_POT_OFF);
-	setVShuntPot(V_SHUNT_POT_OFF);
-}
-
-// todo find out how to pass a register and combine with setGainPot
-void setVShuntPot(unsigned char c) {
-	unsigned char i;
-	if (c > MAX_POT) {
-		c = MAX_POT;
-	}
-	// first drive to 0
-	RA5 = 1;			// set U/D high for increment (decreses voltage)
-	RA2 = 0;			// set /CS0 low (active)
-	for (i = 64; i != 0; i--) {
-		RA5 = 0;		// pulse low
-		RA5 = 1;		// back to high
-	}
-	RA2 = 1;			// release chip select CS0 (set high)
-	
-	// now drive to desired value
-	RA5 = 0;			// set U/D low for decrement (increases voltage)
-	RA2 = 0;			// set /CS0 low (active)
-	for (i = c; i != 0; i--) {
-		RA5 = 1;		// pulse high
-		RA5 = 0;		// back to low
-	}
-	RA2 = 1;			// release chip select CS0 (set high)
-	vShuntPot = c;
-	restoreLed();
-}
-
-void setGainPot(unsigned char c) {
-	unsigned char i;
-	if (c > MAX_POT) {
-		c = MAX_POT;
-	}
-	// first drive to 0
-	RA5 = 1;			// set U/D high for increment (decreses voltage)
-	RA0 = 0;			// set /CS1 low (active)
-	for (i = 64; i != 0; i--) {
-		RA5 = 0;		// pulse low
-		RA5 = 1;		// back to high
-	}
-	RA0 = 1;			// release chip select CS0 (set high)
-	
-	// now drive to desired value
-	RA5 = 0;			// set U/D low for decrement (increases voltage)
-	RA0 = 0;			// set /CS0 low (active)
-	for (i = c; i != 0; i--) {
-		RA5 = 1;		// pulse high
-		RA5 = 0;		// back to low
-	}
-	RA0 = 1;			// release chip select CS0 (set high)
-	gainPot = c;
-	restoreLed();
-}
-
-void txBinStatus() {
-	crc_t crc = crc_init();
-	crc = txCrc(START_OF_PACKET, crc);
-	crc = txEscapeCrc(CELL_ID_LOW, crc);
-	crc = txEscapeCrc(CELL_ID_HIGH, crc);
-	crc = txEscapeCrc(iShunt, crc);
-	crc = txEscapeCrc(iShunt >> 8, crc);
-	crc = txEscapeCrc(vCell, crc);
-	crc = txEscapeCrc(vCell >> 8, crc);
-	crc = txEscapeCrc(vShunt, crc);
-	crc = txEscapeCrc(vShunt >> 8, crc);
-	crc = txEscapeCrc(temperature, crc);
-	crc = txEscapeCrc(temperature >> 8, crc);
-	crc = txEscapeCrc(minCurrent, crc);
-	crc = txEscapeCrc(minCurrent >> 8, crc);
-	crc = txEscapeCrc(gainPot, crc);
-	crc = txEscapeCrc(vShuntPot, crc);
-	crc = txEscapeCrc(hasRx, crc);
-	crc = txEscapeCrc(softwareAddressing, crc);
-	crc = txEscapeCrc(automatic, crc);
-	crc = crc_finalize(crc);
-	txEscape(crc);
-	txEscape(crc >> 8);
-}
-
-void txVersion() {
-	crc_t crc = crc_init();
-	crc = txCrc(START_OF_PACKET, crc);
-	crc = txEscapeCrc(CELL_ID_LOW, crc);
-	crc = txEscapeCrc(CELL_ID_HIGH, crc);
-	crc = txEscapeCrc(PROTOCOL_VERSION, crc);
-	crc = txEscapeCrc(KELVIN_CONNECTION, crc);
-#ifdef RESISTOR_SHUNT
-	crc = txEscapeCrc(1, crc);
-#else
-	crc = txEscapeCrc(0, crc);
-#endif
-#ifdef HARD_SWITCHED_SHUNT
-	crc = txEscapeCrc(1, crc);
-#else
-	crc = txEscapeCrc(0, crc);
-#endif
-	crc = txEscapeCrc(REVISION_LOW, crc);
-	crc = txEscapeCrc(REVISION_HIGH, crc);
-	crc = txEscapeCrc(IS_CLEAN, crc);
-	crc = txEscapeCrc(PROGRAM_DATE_0, crc);
-	crc = txEscapeCrc(PROGRAM_DATE_1, crc);
-	crc = txEscapeCrc(PROGRAM_DATE_2, crc);
-	crc = txEscapeCrc(PROGRAM_DATE_3, crc);
-	crc = crc_finalize(crc);
-	txEscape(crc);
-	txEscape(crc >> 8);
-}
-
-void halt() {
-	minCurrent = 0;
-	setIShunt(0);
-	red(100);
-	green(100);
-	ledOff();
-	vddOff();
-	TMR1IE = 0;			// disable timer interrupt so it doesn't wake us up
-	WUE = 1;			// wake up if we receive something (recieve interrupt still enabled)
-#ifdef SDCC
-	__asm
-		sleep
-	__endasm;
-#endif
-	TMR1IE = 1;			// enable timer
-	green(10);
-	red(10);
-	vddOn();
-}
-
-void setIShunt(unsigned short targetShuntCurrent) {
-#ifdef HARD_SWITCHED_SHUNT
-	if (targetShuntCurrent == 0) {
-		RA2 = 0;
-	} else {
-		RA2 = 1;
-	}
-#else
-	short difference;
-	// if we want zero current, park pots at ..._POT_OFF position
-	if (targetShuntCurrent == 0) {
-		if (gainPot != GAIN_POT_OFF) {
-			setGainPot(GAIN_POT_OFF);
-		}
-		if (vShuntPot != V_SHUNT_POT_OFF) {
-			setVShuntPot(V_SHUNT_POT_OFF);
-		}
-		return;
-	}
-#ifdef RESISTOR_SHUNT
-	if (targetShuntCurrent != 0 && (gainPot != GAIN_POT_RESISTOR_ON || vShuntPot != V_SHUNT_POT_RESISTOR_ON)) {
-		setGainPot(GAIN_POT_RESISTOR_ON);
-		setVShuntPot(V_SHUNT_POT_RESISTOR_ON);
-	}
-#else
-	// first do current limit
-	if (iShunt > ABS_MAX_SHUNT_CURRENT) {
-		setGainPot(GAIN_POT_OFF);
-		setVShuntPot(GAIN_POT_OFF);
-		if (eventOverCurrent < 255) {
-			eventOverCurrent++;
-		}
-		return;
-	}
-	difference = iShunt - targetShuntCurrent;
-	if (sabs(difference) < SHUNT_CURRENT_HYSTERISIS) {
-		return;
-	}
-	if (difference < 0) {
-		if (vShuntPot >= MAX_POT) {
-			setVShuntPot(vShuntPot - 10);
-			setGainPot(gainPot + 1);
-		}
-		setVShuntPot(vShuntPot + 1);
-		red(2);
-	} else {
-		// TODO reduce gain
-		setVShuntPot(vShuntPot - 1);
-	}
-#endif
-#endif
-}
-
-/**
- * Restore the LEDs to the correct state, useful after coming out of suspend.
- *
- * We can light either the red, green or neither LED.
- *
- * If we are shunting, turn on the red LED.
- * If we aren't shunting and the cell is full, turn on the green LED.
- * Otherwise turn off both LEDs.
- *
- * isLedIndicatorOn is designed to cause a dark LED to flash on. If this is true
- * then we invert the logic above.
- *
- */
-void restoreLed() {
-	if (minCurrent) {
-		if (isLedIndicatorOn) {
-			setGreen();
-		} else {
-			setRed();
-		}
-	} else if (vCell > FULL_VOLTAGE) {
-		if (isLedIndicatorOn) {
-			setRed();
-		} else {
-			setGreen();
-		}
-	} else {
-		if (isLedIndicatorOn) {
-			setGreen();
-		} else {
-			ledOff();
-		}
-	}
-}
-
-/** Turn on an LED, see @restoreLed() for how this works */
-void setLedIndicator(unsigned char isOn) {
-	isLedIndicatorOn = isOn;
-	restoreLed();
 }
 
 #ifdef MAP_CURRENT_MATRIX
