@@ -463,7 +463,7 @@ void executeCommand(unsigned char rx) {
 			minCurrent = 450;
 			break;
 		case '$' :
-			automatic = 1 - automatic;
+			automatic = !automatic;
 			txByte(automatic);
 			crlf();
 			break;
