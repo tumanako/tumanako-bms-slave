@@ -124,6 +124,12 @@ volatile unsigned char timerOverflow = 1;
 volatile unsigned char command;
 crc_t rxCRC;
 
+// if we use local variables in main() the compiler optimises them away :(
+unsigned short mainLoopIShunt;
+unsigned short mainLoopTemperature;
+unsigned short mainLoopVCell;
+unsigned short mainLoopVShunt;
+
 volatile unsigned short iShunt;
 volatile unsigned short vCell;
 volatile unsigned short vShunt;
@@ -343,21 +349,20 @@ int main(void) {
 			vddOn();
 		}
 		restoreLed();
-		{
-			unsigned short localIShunt = getIShunt();
-			unsigned short localTemperature = getTemperature();
-			unsigned short localVCell = getVCell();
-			unsigned short localVShunt = getVShunt(localVCell);
 
-			// turn off interrupts
-			disableInterrupts();
-			iShunt = localIShunt;
-			temperature = localTemperature;
-			vCell = localVCell;
-			vShunt = localVShunt;
-			// turn on interrupts
-			GIE = 1;
-		}
+		mainLoopIShunt = getIShunt();
+		mainLoopTemperature = getTemperature();
+		mainLoopVCell = getVCell();
+		mainLoopVShunt = getVShunt(mainLoopVCell);
+
+		disableInterrupts();
+		iShunt = mainLoopIShunt;
+		temperature = mainLoopTemperature;
+		vCell = mainLoopVCell;
+		vShunt = mainLoopVShunt;
+		// turn on interrupts
+		GIE = 1;
+
 		if (timerOverflow % 32 == 0) {
 			// increment timerOverflow so we don't drop back in here on the next loop and go to sleep
 			timerOverflow++;
