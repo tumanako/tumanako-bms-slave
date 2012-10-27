@@ -78,6 +78,9 @@
 #define STATE_WANT_CRC_LOW 4
 #define STATE_WANT_CRC_HIGH 5
 
+#define vddOff() RC0 = 1
+#define isVddOn() (RC0 == 0)
+
 /* Setup chip configuration */
 #ifdef SDCC
 typedef unsigned int config;
@@ -102,8 +105,6 @@ void txBinStatus();
 void txVersion();
 
 void vddOn();
-void vddOff();
-unsigned char isVddOn();
 #ifdef MAP_CURRENT_MATRIX
 void mapCurrentMatrix();
 #endif
@@ -480,14 +481,6 @@ void vddOn() {
 	sleep(10);  // give pots time to turn on
 	setGainPot(GAIN_POT_OFF);
 	setVShuntPot(V_SHUNT_POT_OFF);
-}
-
-void vddOff() {
-	RC0 = 1;	// turn off FET Qx02
-}
-
-unsigned char isVddOn() {
-	return RC0 == 0;
 }
 
 // todo find out how to pass a register and combine with setGainPot
