@@ -31,7 +31,7 @@
 //#define RESISTOR_SHUNT
 //#define HARD_SWITCHED_SHUNT
 
-#define PROTOCOL_VERSION 2
+#define PROTOCOL_VERSION 3
 
 #ifndef CELL_ID_LOW
 #define CELL_ID_LOW 0
@@ -72,10 +72,9 @@
 #define WANT_START_OF_PACKET 0
 #define STATE_WANT_CELL_ID_LOW 1
 #define STATE_WANT_CELL_ID_HIGH 2
-#define STATE_WANT_SEQUENCE_NUMBER 3
-#define STATE_WANT_COMMAND 4
-#define STATE_WANT_CRC_LOW 5
-#define STATE_WANT_CRC_HIGH 6
+#define STATE_WANT_COMMAND 3
+#define STATE_WANT_CRC_LOW 4
+#define STATE_WANT_CRC_HIGH 5
 
 /* Setup chip configuration */
 #ifdef SDCC
@@ -127,7 +126,6 @@ volatile unsigned short vCell;
 volatile unsigned short vShunt;
 volatile unsigned short temperature;
 volatile unsigned short minCurrent = 0;
-volatile unsigned char sequenceNumber;
 // lower numbers == less gain
 volatile char gainPot = MAX_POT;
 // lower numbers == less voltage
@@ -213,19 +211,14 @@ void interruptHandler(void) {
 					} else {
 						state = WANT_START_OF_PACKET;
 					}
-				break;
+					break;
 				case STATE_WANT_CELL_ID_HIGH :
 					if (rx == CELL_ID_HIGH) {
 						rxCRC = crc_update(rxCRC, rx);
-					state = STATE_WANT_SEQUENCE_NUMBER;
+						state = STATE_WANT_COMMAND;
 					} else {
 						state = WANT_START_OF_PACKET;
 					}
-				break;
-			case STATE_WANT_SEQUENCE_NUMBER :
-				state = STATE_WANT_COMMAND;
-				sequenceNumber = rx;
-				rxCRC = crc_update(rxCRC, rx);
 					break;
 				case STATE_WANT_COMMAND :
 					state = STATE_WANT_CRC_LOW;
@@ -563,7 +556,6 @@ void txBinStatus() {
 	crc = txEscapeCrc(temperature >> 8, crc);
 	crc = txEscapeCrc(minCurrent, crc);
 	crc = txEscapeCrc(minCurrent >> 8, crc);
-	crc = txEscapeCrc(sequenceNumber, crc);
 	crc = txEscapeCrc(gainPot, crc);
 	crc = txEscapeCrc(vShuntPot, crc);
 	crc = txEscapeCrc(hasRx, crc);
