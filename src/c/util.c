@@ -26,28 +26,6 @@
 #include "util.h"
 #include "crc.h"
 
-void txShort(unsigned short s) {
-	unsigned char ones = s % 10;
-	unsigned char tens = (s / 10) % 10;
-	unsigned char hundreds = (s / 100) % 10;
-	unsigned char thousands = (s / 1000) % 10;
-	unsigned char tenthousands = (s / 10000) % 10;
-	tx(0x30 + tenthousands);
-	tx(0x30 + thousands);
-	tx(0x30 + hundreds);
-	tx(0x30 + tens);
-	tx(0x30 + ones);
-}
-
-void txByte(unsigned char b) {
-	unsigned char ones = b % 10;
-	unsigned char tens = (b / 10) % 10;
-	unsigned char hundreds = (b / 100) % 10;
-	tx(0x30 + hundreds);
-	tx(0x30 + tens);
-	tx(0x30 + ones);
-}
-
 crc_t txCrc(unsigned char c, crc_t crc) {
 	tx(c);
 	return crc_update(crc, c);
