@@ -200,61 +200,59 @@ void interruptHandler(void) {
 		hasRx = 1;
 		if (rx == ESCAPE_CHARACTER && !escape) {
 			escape = 1;
-			return;
-		}
-		if (rx == START_OF_PACKET && !escape) {
+		} else if (rx == START_OF_PACKET && !escape) {
 			rxCRC = crc_update(crc_init(), rx);
 			state = STATE_WANT_CELL_ID_LOW;
-			return;
-		}
-		escape = 0;
-		switch (state) {
-			case STATE_WANT_CELL_ID_LOW :
-				if (rx == CELL_ID_LOW) {
-					rxCRC = crc_update(rxCRC, rx);
-					state = STATE_WANT_CELL_ID_HIGH;
-				} else {
-					state = WANT_START_OF_PACKET;
-				}
-			break;
-			case STATE_WANT_CELL_ID_HIGH :
-				if (rx == CELL_ID_HIGH) {
-					rxCRC = crc_update(rxCRC, rx);
+		} else {
+			escape = 0;
+			switch (state) {
+				case STATE_WANT_CELL_ID_LOW :
+					if (rx == CELL_ID_LOW) {
+						rxCRC = crc_update(rxCRC, rx);
+						state = STATE_WANT_CELL_ID_HIGH;
+					} else {
+						state = WANT_START_OF_PACKET;
+					}
+				break;
+				case STATE_WANT_CELL_ID_HIGH :
+					if (rx == CELL_ID_HIGH) {
+						rxCRC = crc_update(rxCRC, rx);
 					state = STATE_WANT_SEQUENCE_NUMBER;
-				} else {
-					state = WANT_START_OF_PACKET;
-				}
+					} else {
+						state = WANT_START_OF_PACKET;
+					}
 				break;
 			case STATE_WANT_SEQUENCE_NUMBER :
 				state = STATE_WANT_COMMAND;
 				sequenceNumber = rx;
 				rxCRC = crc_update(rxCRC, rx);
-				break;
-			case STATE_WANT_COMMAND :
-				state = STATE_WANT_CRC_LOW;
-				rxCRC = crc_update(rxCRC, rx);
-				rxCRC = crc_finalize(rxCRC);
-				command = rx;
-				break;
-			case STATE_WANT_CRC_LOW :
-				if (rx == (unsigned char) (rxCRC & 0x00FF)) {
-					state = STATE_WANT_CRC_HIGH;
-				} else {
+					break;
+				case STATE_WANT_COMMAND :
+					state = STATE_WANT_CRC_LOW;
+					rxCRC = crc_update(rxCRC, rx);
+					rxCRC = crc_finalize(rxCRC);
+					command = rx;
+					break;
+				case STATE_WANT_CRC_LOW :
+					if (rx == (unsigned char) (rxCRC & 0x00FF)) {
+						state = STATE_WANT_CRC_HIGH;
+					} else {
+						state = WANT_START_OF_PACKET;
+					}
+					break;
+				case STATE_WANT_CRC_HIGH :
+					if (rx == rxCRC >> 8) {
+						executeCommand(command);
+					}
 					state = WANT_START_OF_PACKET;
-				}
-				break;
-			case STATE_WANT_CRC_HIGH :
-				if (rx == rxCRC >> 8) {
-					executeCommand(command);
-				}
-				state = WANT_START_OF_PACKET;
-				break;
-			default :
-				state = WANT_START_OF_PACKET;
-				break;
+					break;
+				default :
+					state = WANT_START_OF_PACKET;
+					break;
+			}
+			//tx(state);
+			//crlf();
 		}
-		//tx(state);
-		//crlf();
 	}
 #ifdef SDCC
 	// restore stack, see beginning of interrupt for saving
