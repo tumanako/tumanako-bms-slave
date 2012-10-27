@@ -8,9 +8,9 @@ EVD5_OBJ=$(EVD5_SRC:.c=.o)
 SRCS=$(wildcard *.c)
 HDRS=$(wildcard *.h)
 
-CFLAGS=-mpic14 -p16f688 -V --debug -I. $(EXTRA)
+CFLAGS=--use-non-free -mpic14 -p16f688 -V --debug -I. $(EXTRA)
 CC=sdcc
-LDFLAGS=-mpic14 -p16f688 -V --debug -Wl-c -Wl-m -I../../../slave/src/c/ -oevd5.hex
+LDFLAGS=--use-non-free -mpic14 -p16f688 -V --debug -Wl-c -Wl-m -I../../../slave/src/c/ -oevd5.hex
 
 all: evd5.hex
 
