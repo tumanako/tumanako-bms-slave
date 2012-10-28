@@ -16,16 +16,19 @@ class Cell:
 		self.kelvinConnection = None
 		self.resistorShunt = None
 		self.hardSwitchedShunt = None
+		self.hasTemperatureSensor = None
 		self.revision = None
 		self.isClean = None
 		self.whenProgrammed = None
 
 	def read(self):
-		data = readData(15, 13)
+		data = readData(15, 14)
 		if data[0] == 0xff:
 			self.read_ff(data)
 		elif data[0] == 0x1:
 			self.read_1(data)
+		elif data[0] == 0x2:
+			self.read_2(data)
 		else:
 			raise ValueError("unknown config verison in " + str(data))
 
@@ -59,9 +62,25 @@ class Cell:
 		self.whenProgrammed = self.whenProgrammed * 256 + data[10]
 		self.whenProgrammed = self.whenProgrammed * 256 + data[9]
 
+	def read_2(self, data):
+		self.configVersion = 0x2
+		self.cellId = data[1] + data[2] * 256
+		if self.cellId == 0xffff:
+			self.cellId = None
+		self.kelvinConnection = decodeBoolean(data[3])
+		self.resistorShunt = decodeBoolean(data[4])
+		self.hardSwitchedShunt = decodeBoolean(data[5])
+		self.hasTemperatureSensor = decodeBoolean(data[6])
+		self.revision = data[7] + data[8] * 256
+		self.isClean = decodeBoolean(data[9])
+		self.whenProgrammed = data[13]
+		self.whenProgrammed = self.whenProgrammed * 256 + data[12]
+		self.whenProgrammed = self.whenProgrammed * 256 + data[11]
+		self.whenProgrammed = self.whenProgrammed * 256 + data[10]
+
 	def write(self):
-		self.configVersion = 0x1
-		data = struct.pack("<BHBBBHBL", self.configVersion, self.cellId, self.kelvinConnection, self.resistorShunt, self.hardSwitchedShunt, self.revision, self.isClean, self.whenProgrammed)
+		self.configVersion = 0x2
+		data = struct.pack("<BHBBBBHBL", self.configVersion, self.cellId, self.kelvinConnection, self.hasTemperatureSensor, self.resistorShunt, self.hardSwitchedShunt, self.revision, self.isClean, self.whenProgrammed)
 		writeData(15, data)
 
 		newConfig = Cell()
@@ -141,6 +160,7 @@ parser.add_argument('--cellId', type=int)
 parser.add_argument('--kelvin')
 parser.add_argument('--resistorShunt')
 parser.add_argument('--hardSwitchedShunt')
+parser.add_argument('--hasTemperatureSensor')
 args = parser.parse_args()
 print "got args", args
 
@@ -152,6 +172,8 @@ if args.resistorShunt != None:
 	config.resistorShunt = args.resistorShunt == 'True'
 if args.hardSwitchedShunt != None:
 	config.hardSwitchedShunt = args.hardSwitchedShunt == 'True'
+if args.hasTemperatureSensor != None:
+	config.hasTemperatureSensor = args.hasTemperatureSensor == 'True'
 
 if config.cellId == None:
 	raise ValueError
@@ -160,6 +182,8 @@ if config.kelvinConnection == None:
 if config.resistorShunt == None:
 	raise ValueError
 if config.hardSwitchedShunt == None:
+	raise ValueError
+if config.hasTemperatureSensor == None:
 	raise ValueError
 
 config.revision = getRevision()
@@ -183,6 +207,8 @@ if config.resistorShunt:
 	extra = extra + " -DRESISTOR_SHUNT=1"
 if config.hardSwitchedShunt:
 	extra = extra + " -DHARD_SWITCHED_SHUNT=1"
+if config.hasTemperatureSensor:
+	extra = extra + " -DHAS_TEMPERATURE_SENSOR=1"
 makeEnv = os.environ.copy()
 makeEnv["EXTRA"] = extra
 make = Popen(["make", "clean", "all"], env=makeEnv)

@@ -30,6 +30,7 @@
 //#define MAP_CURRENT_MATRIX
 //#define RESISTOR_SHUNT
 //#define HARD_SWITCHED_SHUNT
+//#define HAS_TEMPERATURE_SENSOR
 
 #define PROTOCOL_VERSION 3
 
@@ -195,6 +196,11 @@ void txVersion() {
 	crc = txEscapeCrc(0, crc);
 #endif
 #ifdef HARD_SWITCHED_SHUNT
+	crc = txEscapeCrc(1, crc);
+#else
+	crc = txEscapeCrc(0, crc);
+#endif
+#ifdef HAS_TEMPERATURE_SENSOR
 	crc = txEscapeCrc(1, crc);
 #else
 	crc = txEscapeCrc(0, crc);
