@@ -80,7 +80,7 @@ class Cell:
 
 	def write(self):
 		self.configVersion = 0x2
-		data = struct.pack("<BHBBBBHBL", self.configVersion, self.cellId, self.kelvinConnection, self.hasTemperatureSensor, self.resistorShunt, self.hardSwitchedShunt, self.revision, self.isClean, self.whenProgrammed)
+		data = struct.pack("<BHBBBBHBL", self.configVersion, self.cellId, self.kelvinConnection, self.resistorShunt, self.hardSwitchedShunt, self.hasTemperatureSensor, self.revision, self.isClean, self.whenProgrammed)
 		writeData(15, data)
 
 		newConfig = Cell()
