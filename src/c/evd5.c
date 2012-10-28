@@ -164,6 +164,24 @@ void txBinStatus() {
 	txEscape(crc >> 8);
 }
 
+void txSummary() {
+	crc_t crc = crc_init();
+	crc = txCrc(START_OF_PACKET, crc);
+	crc = txEscapeCrc(CELL_ID_LOW, crc);
+	crc = txEscapeCrc(CELL_ID_HIGH, crc);
+	crc = txEscapeCrc(iShunt, crc);
+	crc = txEscapeCrc(iShunt >> 8, crc);
+	crc = txEscapeCrc(vCell, crc);
+	crc = txEscapeCrc(vCell >> 8, crc);
+	crc = txEscapeCrc(vShunt, crc);
+	crc = txEscapeCrc(vShunt >> 8, crc);
+	crc = txEscapeCrc(temperature, crc);
+	crc = txEscapeCrc(temperature >> 8, crc);
+	crc = crc_finalize(crc);
+	txEscape(crc);
+	txEscape(crc >> 8);
+}
+
 void txVersion() {
 	crc_t crc = crc_init();
 	crc = txCrc(START_OF_PACKET, crc);
@@ -315,6 +333,9 @@ void executeCommand(unsigned char rx) {
 #endif
 		case '/' :
 			txBinStatus();
+			break;
+		case 's' :
+			txSummary();
 			break;
 		case '?' :
 			txVersion();
