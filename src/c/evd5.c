@@ -32,7 +32,7 @@
 //#define HARD_SWITCHED_SHUNT
 //#define HAS_TEMPERATURE_SENSOR
 
-#define PROTOCOL_VERSION 3
+#define PROTOCOL_VERSION 4
 
 #ifndef CELL_ID_LOW
 #define CELL_ID_LOW 0
@@ -174,8 +174,6 @@ void txSummary() {
 	crc = txEscapeCrc(iShunt >> 8, crc);
 	crc = txEscapeCrc(vCell, crc);
 	crc = txEscapeCrc(vCell >> 8, crc);
-	crc = txEscapeCrc(vShunt, crc);
-	crc = txEscapeCrc(vShunt >> 8, crc);
 	crc = txEscapeCrc(temperature, crc);
 	crc = txEscapeCrc(temperature >> 8, crc);
 	crc = crc_finalize(crc);
