@@ -61,6 +61,7 @@ void interruptHandler(void) {
 		char rx = rxBuf[rxStart % RX_BUF_SIZE];
 		rxStart++;
 		tx(rx);
+		red(20);
 	}
 }
 
@@ -110,7 +111,13 @@ void main(void) {
 	green(150);
 
 	while(1) {
-		;
+		char c;
+		for (c = '0'; c < 'Z'; c++) {	
+			tx(c);
+			sleep(50);
+		}
+		tx('\r');
+		tx('\n');
 	}
 }
 
