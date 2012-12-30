@@ -3,14 +3,14 @@
 #
 
 ECHO_SRC=echo.c
-ECHO_OBJ=$(ECHO_SRC:.c=.o) ../../c/util.o
+ECHO_OBJ=$(ECHO_SRC:.c=.o) ../../c/util.o ../../c/crc.o
 
 SRCS=$(wildcard *.c)
 HDRS=$(wildcard *.h)
 
-CFLAGS=-mpic14 -p16f688 -V --debug -I../../c
+CFLAGS=--use-non-free -mpic14 -p16f688 -V --debug -I../../c
 CC=sdcc
-LDFLAGS=-mpic14 -p16f688 -V --debug -Wl-c -Wl-m 
+LDFLAGS=--use-non-free -mpic14 -p16f688 -V --debug -Wl-c -Wl-m 
 
 all: echo.hex
 
