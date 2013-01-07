@@ -18,7 +18,7 @@ evd5.hex: $(EVD5_OBJ)
 	$(CC) -o monitor $(EVD5_OBJ) $(LDFLAGS) $(LIBS)
 
 clean:
-	rm -f *.o *.map crc.asm evd5.asm util.asm *.p *.cod *.adb *.lst evd5.hex
+	rm -f *.o *.map crc.asm evd5.asm util.asm *.p *.cod *.adb *.lst *.cof evd5.hex
 
 write: all
 	pk2cmd -PPIC16F688 -E -M -Z -Fevd5.hex -R
