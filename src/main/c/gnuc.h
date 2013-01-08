@@ -84,17 +84,17 @@
  __sfr  __at (ADRESL_ADDR)                  ADRESL;
 __sfr  __at (ADCON1_ADDR)                  ADCON1;
 
-#include "pic/pic16f688.h"
-volatile __PORTA_bits_t __at(PORTA_ADDR) PORTA_bits;
-volatile __PORTC_bits_t __at(PORTC_ADDR) PORTC_bits;
-volatile __ADCON0_bits_t __at(ADCON0_ADDR) ADCON0_bits;
-volatile __EECON1_bits_t __at(EECON1_ADDR) EECON1_bits;
-volatile __INTCON_bits_t __at(INTCON_ADDR) INTCON_bits;
-volatile __PIR1_bits_t __at(PIR1_ADDR) PIR1_bits;
-volatile __PIE1_bits_t __at(PIE1_ADDR) PIE1_bits;
-volatile __BAUDCTL_bits_t __at(BAUDCTL_ADDR) BAUDCTL_bits;
-volatile __RCSTA_bits_t __at(RCSTA_ADDR) RCSTA_bits;
-volatile __T1CON_bits_t __at(T1CON_ADDR) T1CON_bits;
-volatile __TXSTA_bits_t __at(TXSTA_ADDR) TXSTA_bits;
+#include "pic14/pic16f688.h"
+volatile __PORTAbits_t __at(PORTA_ADDR) PORTAbits;
+volatile __PORTCbits_t __at(PORTC_ADDR) PORTCbits;
+volatile __ADCON0bits_t __at(ADCON0_ADDR) ADCON0bits;
+volatile __EECON1bits_t __at(EECON1_ADDR) EECON1bits;
+volatile __INTCONbits_t __at(INTCON_ADDR) INTCONbits;
+volatile __PIR1bits_t __at(PIR1_ADDR) PIR1bits;
+volatile __PIE1bits_t __at(PIE1_ADDR) PIE1bits;
+volatile __BAUDCTLbits_t __at(BAUDCTL_ADDR) BAUDCTLbits;
+volatile __RCSTAbits_t __at(RCSTA_ADDR) RCSTAbits;
+volatile __T1CONbits_t __at(T1CON_ADDR) T1CONbits;
+volatile __TXSTAbits_t __at(TXSTA_ADDR) TXSTAbits;
 
 #endif
