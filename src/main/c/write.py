@@ -93,7 +93,7 @@ class Cell:
 			raise ValueError("expected resistor shunt " + str(self.resistorShunt) + " but got " + str(newConfig))
 
 	def __str__(self):
-		return "configVersion: " + str(self.configVersion) + " cellId: " + str(self.cellId) + " kelvin: " + str(self.kelvinConnection) + " resistorShunt: " + str(self.resistorShunt) + " hardSwitchedShunt: " + str(self.hardSwitchedShunt) + " r" + str(self.revision) + " isClean: " + str(self.isClean) + " whenProgrammed: " + str(self.whenProgrammed)
+		return "configVersion: " + str(self.configVersion) + " cellId: " + str(self.cellId) + " kelvin: " + str(self.kelvinConnection) + " resistorShunt: " + str(self.resistorShunt) + " hardSwitchedShunt: " + str(self.hardSwitchedShunt) + " temperatureSensor: " + str(self.hasTemperatureSensor) + " r" + str(self.revision) + " isClean: " + str(self.isClean) + " whenProgrammed: " + str(self.whenProgrammed)
 
 def decodeBoolean(b):
 	if (b == 0):
